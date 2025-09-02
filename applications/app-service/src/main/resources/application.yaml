@@ -11,22 +11,17 @@ spring:
       path: "/h2"
   profiles:
     include: null
-  datasource:
-    url: "jdbc:h2:mem:test"
-    username: "sa"
-    password: "pass"
-    driverClassName: "org.h2.Driver"
 routes:
   paths:
     solicitudes: "/api/v1/solicitudes"
 adapters:
   r2dbc:
-    host: "${POSTGRES_HOST:postgres}"
-    port: "${POSTGRES_PORT:5432}"
+    host: "${POSTGRES_HOST:localhost}"
+    port: "${POSTGRES_PORT:5434}"
     database: "${POSTGRES_DB:solicitudesdb}"
     schema: "public"
     username: "${POSTGRES_USER:postgres}"
-    password: "${POSTGRES_PASSWORD:}"
+    password: "${POSTGRES_PASSWORD:Shekina1}"
   restconsumer:
     url: "http://localhost:8081/api/v1/usuarios"
     timeout: 5000

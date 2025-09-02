@@ -1,60 +1,56 @@
 package co.com.crediya.api;
 
-import org.assertj.core.api.Assertions;
+import co.com.crediya.api.config.CorsConfig;
+import co.com.crediya.api.config.SecurityHeadersConfig;
+import co.com.crediya.model.solicitud.Solicitud;
+import co.com.crediya.usecase.solicitud.SolicitudUseCase;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
-import org.springframework.http.MediaType;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import reactor.core.publisher.Mono;
 
-@ContextConfiguration(classes = {RouterRest.class, Handler.class})
+import java.math.BigInteger;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
 @WebFluxTest
+@ContextConfiguration(classes = {RouterRest.class, Handler.class})
+@Import({CorsConfig.class, SecurityHeadersConfig.class})
 class RouterRestTest {
 
     @Autowired
     private WebTestClient webTestClient;
 
-    @Test
-    void testListenGETUseCase() {
-        webTestClient.get()
-                .uri("/api/usecase/path")
-                .accept(MediaType.APPLICATION_JSON)
-                .exchange()
-                .expectStatus().isOk()
-                .expectBody(String.class)
-                .value(userResponse -> {
-                            Assertions.assertThat(userResponse).isEmpty();
-                        }
-                );
-    }
+    @MockitoBean
+    private SolicitudUseCase solicitudUseCase;
 
     @Test
-    void testListenGETOtherUseCase() {
-        webTestClient.get()
-                .uri("/api/otherusercase/path")
-                .accept(MediaType.APPLICATION_JSON)
-                .exchange()
-                .expectStatus().isOk()
-                .expectBody(String.class)
-                .value(userResponse -> {
-                            Assertions.assertThat(userResponse).isEmpty();
-                        }
-                );
-    }
+    void testRegistrarSolicitud_ok() {
+        Solicitud solicitudMock = Solicitud.builder()
+                .id(BigInteger.ONE)
+                .monto(14_000_000L)
+                .plazo("3 años")
+                .email("carlos@email.com")
+                .idTipoPrestamo(BigInteger.valueOf(2))
+                .build();
 
-    @Test
-    void testListenPOSTUseCase() {
+        when(solicitudUseCase.registrarSolicitud(any(Solicitud.class)))
+                .thenReturn(Mono.just(solicitudMock));
+
         webTestClient.post()
-                .uri("/api/usecase/otherpath")
-                .accept(MediaType.APPLICATION_JSON)
-                .bodyValue("")
+                .uri("/api/solicitudes")  // Ajusta esta ruta según tu RouterRest real
+                .bodyValue(solicitudMock)
                 .exchange()
                 .expectStatus().isOk()
-                .expectBody(String.class)
-                .value(userResponse -> {
-                            Assertions.assertThat(userResponse).isEmpty();
-                        }
-                );
+                .expectBody()
+                .jsonPath("$.monto").isEqualTo(14_000_000)
+                .jsonPath("$.plazo").isEqualTo("3 años")
+                .jsonPath("$.email").isEqualTo(solicitudMock.getEmail())
+                .jsonPath("$.idTipoPrestamo").isEqualTo(solicitudMock.getIdTipoPrestamo().intValue());
     }
 }

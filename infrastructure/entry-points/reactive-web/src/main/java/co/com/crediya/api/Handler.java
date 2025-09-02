@@ -3,7 +3,6 @@ package co.com.crediya.api;
 import co.com.crediya.api.dto.CreateSolicitudDTO;
 import co.com.crediya.api.dto.SolicitudResponseDTO;
 import co.com.crediya.api.mapper.SolicitudDTOMapper;
-import co.com.crediya.model.solicitud.Solicitud;
 import co.com.crediya.usecase.solicitud.SolicitudUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -24,7 +23,7 @@ public class Handler {
     private final SolicitudDTOMapper solicitudDTOMapper;
 
     @Operation(
-            summary = "Crear un nuevo solicitud",
+            summary = "Crear una nueva solicitud",
             description = "Crea una solicitud a partir de un DTO con información del préstamo",
             requestBody = @RequestBody(
                     required = true,
