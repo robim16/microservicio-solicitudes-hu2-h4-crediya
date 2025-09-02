@@ -1,4 +1,4 @@
-package co.com.crediya.model.solicitud;
+package co.com.crediya.model.tipo_prestamo;
 import lombok.Builder;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -6,18 +6,17 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigInteger;
-import java.time.LocalDate;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(toBuilder = true)
-public class Solicitud {
+public class TipoPrestamo {
     private BigInteger id;
-    private Long monto;
-    private String plazo;
-    private String email;
-    private BigInteger idEstado;
-    private BigInteger idTipoPrestamo;
+    private String nombre;
+    private Long montoMinimo;
+    private Long montoMaximo;
+    private Float tasaInteres;
+    private Boolean validacionAutomatica;
 }
