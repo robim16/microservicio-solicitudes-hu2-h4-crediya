@@ -36,7 +36,7 @@ public class SolicitudUseCase implements ISolicitudUseCase {
                                             .switchIfEmpty(Mono.error(new RuntimeException("Cliente no encontrado")))
                                             .flatMap(usuario ->
                                                     tipoPrestamoRepository.getTipoPrestamoById(validSolicitud.getIdTipoPrestamo())
-                                                            .switchIfEmpty(Mono.error(new RuntimeException("Tipo de préstamo no encontrado")))
+                                                            .switchIfEmpty(Mono.error(new RuntimeException("Tipo de prestamo no encontrado")))
                                                             .flatMap(tipoPrestamo ->
                                                                     solicitudRepository.registrarSolicitud(validSolicitud)
                                                             )
