@@ -1,14 +1,19 @@
-package co.com.crediya.model.tipo_prestamo;
+package co.com.crediya.consumer;
+
 import lombok.Builder;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-//import lombok.NoArgsConstructor;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
-//@NoArgsConstructor
+@NoArgsConstructor
 @AllArgsConstructor
 @Builder(toBuilder = true)
-public class Tipo_prestamo {
+public class ObjectRequest {
+
+    private String val1;
+    private String val2;
+
 }

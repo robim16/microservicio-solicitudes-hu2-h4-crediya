@@ -1,19 +1,16 @@
-package co.com.crediya.model.estados;
+package co.com.crediya.consumer;
+
 import lombok.Builder;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.math.BigInteger;
-
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(toBuilder = true)
-public class Estados {
-    private BigInteger id;
-    private String nombre;
-    private String descripcion;
+public class ObjectResponse {
+    private String state;
 }

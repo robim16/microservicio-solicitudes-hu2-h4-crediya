@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: 8082
 spring:
   application:
     name: "registrar-solicitudes-crediYA"
@@ -11,6 +11,24 @@ spring:
       path: "/h2"
   profiles:
     include: null
+routes:
+  paths:
+    solicitudes: "/api/v1/solicitudes"
+adapters:
+  r2dbc:
+    host: "${POSTGRES_HOST:localhost}"
+    port: "${POSTGRES_PORT:5434}"
+    database: "${POSTGRES_DB:solicitudesdb}"
+    schema: "public"
+    username: "${POSTGRES_USER:postgres}"
+    password: "${POSTGRES_PASSWORD:Shekina1}"
+  restconsumer:
+    url: "http://localhost:8081/api/v1/usuarios"
+    timeout: 5000
+jwt:
+  keys:
+    public-key: classpath:keys/public_key.pem
+  expiration: 3600000
 management:
   endpoints:
     web:
@@ -20,5 +38,33 @@ management:
     health:
       probes:
         enabled: true
+  health:
+    circuitbreakers:
+      enabled: true
 cors:
   allowed-origins: "http://localhost:4200,http://localhost:8080"
+adapter:
+  restconsumer:
+    timeout: 5000
+    url: "http://localhost:8080"
+resilience4j:
+  circuitbreaker:
+    instances:
+      testGet:
+        registerHealthIndicator: true
+        failureRateThreshold: 50
+        slowCallRateThreshold: 50
+        slowCallDurationThreshold: "2s"
+        permittedNumberOfCallsInHalfOpenState: 3
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 10
+        waitDurationInOpenState: "10s"
+      testPost:
+        registerHealthIndicator: true
+        failureRateThreshold: 50
+        slowCallRateThreshold: 50
+        slowCallDurationThreshold: "2s"
+        permittedNumberOfCallsInHalfOpenState: 3
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 10
+        waitDurationInOpenState: "10s"

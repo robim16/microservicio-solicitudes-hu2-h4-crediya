@@ -1,4 +1,4 @@
-package co.com.crediya.model.solicitud;
+package co.com.crediya.model.usuario;
 import lombok.Builder;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -13,11 +13,10 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(toBuilder = true)
-public class Solicitud {
+public class Usuario {
     private BigInteger id;
-    private Long monto;
-    private String plazo;
+    private String nombre;
+    private String apellidos;
     private String email;
-    private BigInteger idEstado;
-    private BigInteger idTipoPrestamo;
+    private Long salarioBase;
 }
