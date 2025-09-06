@@ -4,5 +4,5 @@ import co.com.crediya.model.solicitud.Solicitud;
 import reactor.core.publisher.Mono;
 
 public interface ISolicitudUseCase {
-    public Mono<Solicitud> registrarSolicitud(Solicitud solicitud);
+    public Mono<Solicitud> registrarSolicitud(Solicitud solicitud, String token);
 }

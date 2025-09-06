@@ -18,10 +18,12 @@ public class RestConsumer implements UsuarioRepository {
 
     @Override
     @CircuitBreaker(name = "getClientByEmail", fallbackMethod = "fallbackGetUsuarioByEmail")
-    public Mono<Usuario> getUsuarioByEmail(String email) {
+    public Mono<Usuario> getUsuarioByEmail(String email, String token) {
+
         return client
                 .get()
                 .uri("/{email}", email)
+                .header("Authorization", "Bearer " + token)
                 .retrieve()
                 .bodyToMono(Usuario.class);
     }

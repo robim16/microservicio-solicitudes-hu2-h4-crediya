@@ -48,8 +48,12 @@ public class Handler {
             }
     )
     public Mono<ServerResponse> listenSaveSolicitud(ServerRequest request) {
+        String token = request.headers()
+                .firstHeader("Authorization")
+                .replace("Bearer ", "");
+
         return request.bodyToMono(CreateSolicitudDTO.class)
-                .flatMap(dto -> solicitudUseCase.registrarSolicitud(solicitudDTOMapper.mapToEntity(dto)))
+                .flatMap(dto -> solicitudUseCase.registrarSolicitud(solicitudDTOMapper.mapToEntity(dto),token))
                 .flatMap(savedSolicitud -> {
                     SolicitudResponseDTO solicitudResponseDTO = solicitudDTOMapper.mapToResponseDTO(savedSolicitud);
                     return ServerResponse.ok()

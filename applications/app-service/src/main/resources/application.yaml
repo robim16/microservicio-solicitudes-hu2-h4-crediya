@@ -25,6 +25,10 @@ adapters:
   restconsumer:
     url: "http://localhost:8081/api/v1/usuarios"
     timeout: 5000
+jwt:
+  keys:
+    public-key: classpath:keys/public_key.pem
+  expiration: 3600000
 management:
   endpoints:
     web:

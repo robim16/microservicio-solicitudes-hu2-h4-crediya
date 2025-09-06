@@ -8,7 +8,7 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class UsuarioUseCase {
     private final UsuarioRepository usuarioRepository;
-    public Mono<Usuario> getUsuarioByEmail(String email) {
-        return usuarioRepository.getUsuarioByEmail(email);
+    public Mono<Usuario> getUsuarioByEmail(String email, String token) {
+        return usuarioRepository.getUsuarioByEmail(email, token);
     }
 }

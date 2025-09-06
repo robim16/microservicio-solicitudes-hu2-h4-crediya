@@ -43,7 +43,7 @@ class RouterRestTest {
                 .thenReturn(Mono.just(solicitudMock));
 
         webTestClient.post()
-                .uri("/api/solicitudes")  // Ajusta esta ruta según tu RouterRest real
+                .uri("/api/v1/solicitudes")
                 .bodyValue(solicitudMock)
                 .exchange()
                 .expectStatus().isOk()
