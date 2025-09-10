@@ -30,9 +30,18 @@ public class RouterRest {
                     beanClass = Handler.class,
                     beanMethod = "listenSaveSolicitud"
 
+            ),
+            @RouterOperation(
+                    path = "/api/v1/solicitudes",
+                    produces = MediaType.APPLICATION_JSON_VALUE,
+                    method = { RequestMethod.GET },
+                    beanClass = Handler.class,
+                    beanMethod = "listenFilterSolicitud"
+
             )
     })
     public RouterFunction<ServerResponse> routerFunction(Handler handler) {
-        return route(POST(solicitudPath.getSolicitudes()), solicitudHandler::listenSaveSolicitud);
+        return route(POST(solicitudPath.getSolicitudes()), solicitudHandler::listenSaveSolicitud)
+                .andRoute(GET(solicitudPath.getSolicitudes()), solicitudHandler::listenFilterSolicitud);
     }
 }
