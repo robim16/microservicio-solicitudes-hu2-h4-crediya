@@ -1,20 +1,26 @@
 package co.com.crediya.usecase.solicitud;
 
+import co.com.crediya.model.solicitud.Solicitud;
 import co.com.crediya.model.solicitud.vo.SolicitudConDetalles;
 import co.com.crediya.model.solicitud.gateways.SolicitudRepository;
+import co.com.crediya.model.tipo_prestamo.TipoPrestamo;
 import co.com.crediya.model.tipo_prestamo.gateways.TipoPrestamoRepository;
+import co.com.crediya.model.usuario.Usuario;
 import co.com.crediya.model.usuario.gateways.UsuarioRepository;
+import co.com.crediya.model.usuario.security.AuthenticatedUser;
 import co.com.crediya.model.usuario.security.TokenService;
 import co.com.crediya.usecase.solicitud.exceptions.ErrorFilterException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -25,8 +31,6 @@ class SolicitudUseCaseTest {
     private UsuarioRepository usuarioRepository;
     private TipoPrestamoRepository tipoPrestamoRepository;
     private TokenService tokenService;
-
-
     private SolicitudUseCase solicitudUseCase;
 
     @BeforeEach
@@ -45,6 +49,65 @@ class SolicitudUseCaseTest {
                 tokenService
         );
     }
+
+    @Test
+    void registrarSolicitud_debeGuardarConEstadoPorDefecto() {
+
+        String token = "token-valido";
+        String email = "usuario@test.com";
+
+        AuthenticatedUser authUser = new AuthenticatedUser(email, "ROLE_USER");
+        when(tokenService.validateToken(token)).thenReturn(authUser);
+
+        Usuario usuarioMock = Usuario.builder()
+                .email(email)
+                .nombre("Carlos")
+                .apellidos("Arteaga")
+                .salarioBase(2_000_000L)
+                .build();
+        when(usuarioRepository.getUsuarioByEmail(email, token))
+                .thenReturn(Mono.just(usuarioMock));
+
+        TipoPrestamo tipoPrestamoMock = TipoPrestamo.builder()
+                .id(BigInteger.ONE)
+                .nombre("Libre inversión")
+                .build();
+
+        when(tipoPrestamoRepository.getTipoPrestamoById(BigInteger.ONE))
+                .thenReturn(Mono.just(tipoPrestamoMock));
+
+
+        Solicitud solicitudEntrada = Solicitud.builder()
+                .monto(10_000_000L)
+                .plazo("12")
+                .email(email)
+                .idTipoPrestamo(BigInteger.ONE)
+                .tasaInteres("0.05")
+                .idEstado(BigInteger.ONE)
+                .build();
+
+        Solicitud solicitudGuardada = solicitudEntrada.toBuilder()
+                .id(BigInteger.ONE)
+                .build();
+
+        when(solicitudRepository.registrarSolicitud(any(Solicitud.class)))
+                .thenReturn(Mono.just(solicitudGuardada));
+
+        Mono<Solicitud> resultado = solicitudUseCase.registrarSolicitud(solicitudEntrada, token);
+
+        StepVerifier.create(resultado)
+                .assertNext(sol -> {
+                    assert sol.getId().equals(BigInteger.ONE);
+                    assert sol.getIdEstado().equals(BigInteger.ONE);
+                    assert sol.getEmail().equals(email);
+                })
+                .verifyComplete();
+
+        verify(tokenService, times(1)).validateToken(token);
+        verify(usuarioRepository, times(1)).getUsuarioByEmail(email, token);
+        verify(solicitudRepository, times(1)).registrarSolicitud(any(Solicitud.class));
+    }
+
 
     @Test
     void filtrarSolicitud_debeRetornarSolicitudesCorrectamente() {
