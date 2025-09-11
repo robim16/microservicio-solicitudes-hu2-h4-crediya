@@ -21,6 +21,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
+import reactor.util.context.Context;
+
 import java.util.List;
 
 
@@ -133,7 +135,7 @@ public class Handler {
         Mono<List<SolicitudUsuarioResponseDTO>> solicitudesListado =
                 solicitudUseCase.filtrarSolicitud(estado, email, plazo, tipoPrestamo, page, size)
                         .flatMap(solicitudConDetalles ->
-                                userUseCase.getUsuarioByEmail(solicitudConDetalles.getEmail(), token)
+                                userUseCase.getUsuarioByEmail(solicitudConDetalles.getEmail())
                                         .map(usuario -> new SolicitudUsuarioResponseDTO(
                                                 solicitudConDetalles.getId(),
                                                 solicitudConDetalles.getMonto(),
@@ -147,7 +149,8 @@ public class Handler {
                                                 usuario.getSalarioBase()
                                         ))
                         )
-                        .collectList();
+                        .collectList()
+                        .contextWrite(Context.of("token", token));;
 
         Mono<Long> totalSolicitudes =
                 solicitudUseCase.contarSolicitudes(estado, email, plazo, tipoPrestamo);
@@ -169,6 +172,8 @@ public class Handler {
                             .contentType(MediaType.APPLICATION_JSON)
                             .bodyValue(responseDTO);
                 });
+
+
     }
 
 }
