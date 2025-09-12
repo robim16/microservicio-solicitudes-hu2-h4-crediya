@@ -1,12 +1,13 @@
-# Stage 1: Build the application
-FROM gradle:8.5-jdk21 AS build
+# Etapa de construcción
+FROM gradle:8.8-jdk17 AS builder
 WORKDIR /app
-COPY --chown=gradle:gradle . /app
-RUN gradle bootJar --no-daemon
+COPY . .
+RUN gradle clean build -x test
 
-# Stage 2: Create the final runtime image
-FROM bellsoft/liberica-runtime-container:jre-21-musl
+# Etapa de runtime
+FROM eclipse-temurin:17-jdk-alpine
 WORKDIR /app
+COPY --from=builder /app/build/libs/*.jar app.jar
+
 EXPOSE 8082
-COPY --from=build /app/build/libs/*.jar /app/app.jar
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
