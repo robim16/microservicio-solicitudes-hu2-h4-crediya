@@ -131,7 +131,7 @@ public class Handler {
                 .firstHeader("Authorization")
                 .replace("Bearer ", "");
 
-
+        //mucho codigo y test 90%
         Mono<List<SolicitudUsuarioResponseDTO>> solicitudesListado =
                 solicitudUseCase.filtrarSolicitud(estado, email, plazo, tipoPrestamo, page, size)
                         .flatMap(solicitudConDetalles ->
