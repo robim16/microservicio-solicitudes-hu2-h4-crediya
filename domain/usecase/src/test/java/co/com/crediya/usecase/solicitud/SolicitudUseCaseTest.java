@@ -9,7 +9,10 @@ import co.com.crediya.model.usuario.Usuario;
 import co.com.crediya.model.usuario.gateways.UsuarioRepository;
 import co.com.crediya.model.usuario.security.AuthenticatedUser;
 import co.com.crediya.model.usuario.security.TokenService;
+import co.com.crediya.usecase.solicitud.exceptions.ClientNotFoundException;
 import co.com.crediya.usecase.solicitud.exceptions.ErrorFilterException;
+import co.com.crediya.usecase.solicitud.exceptions.InvalidUserException;
+import co.com.crediya.usecase.solicitud.exceptions.TipoPrestamoNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -20,7 +23,6 @@ import reactor.test.StepVerifier;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -65,7 +67,7 @@ class SolicitudUseCaseTest {
                 .apellidos("Arteaga")
                 .salarioBase(2_000_000L)
                 .build();
-        when(usuarioRepository.getUsuarioByEmail(email, token))
+        when(usuarioRepository.getUsuarioByEmail(email))
                 .thenReturn(Mono.just(usuarioMock));
 
         TipoPrestamo tipoPrestamoMock = TipoPrestamo.builder()
@@ -104,8 +106,96 @@ class SolicitudUseCaseTest {
                 .verifyComplete();
 
         verify(tokenService, times(1)).validateToken(token);
-        verify(usuarioRepository, times(1)).getUsuarioByEmail(email, token);
+        verify(usuarioRepository, times(1)).getUsuarioByEmail(email);
         verify(solicitudRepository, times(1)).registrarSolicitud(any(Solicitud.class));
+    }
+
+
+    @Test
+    void registrarSolicitud_debeLanzarInvalidUserExceptionSiEmailNoCoincide() {
+        String token = "valid-token";
+        String emailToken = "user@test.com";      // Email en el token
+        String emailSolicitud = "otro@test.com";  // Email distinto en la solicitud
+
+        Solicitud solicitudEntrada = new Solicitud();
+        solicitudEntrada.setMonto(1000000L);
+        solicitudEntrada.setPlazo("12 meses");
+        solicitudEntrada.setEmail(emailSolicitud);
+        solicitudEntrada.setIdTipoPrestamo(BigInteger.ONE);
+
+        when(tokenService.validateToken(token)).thenReturn(new AuthenticatedUser(emailToken, "ROLE_USER"));
+
+        StepVerifier.create(solicitudUseCase.registrarSolicitud(solicitudEntrada, token))
+                .expectErrorSatisfies(throwable -> {
+                    assert throwable instanceof InvalidUserException;
+                    assert throwable.getMessage().contains("No se puede crear una solicitud a otro usuario");
+                })
+                .verify();
+
+        verifyNoInteractions(usuarioRepository, tipoPrestamoRepository, solicitudRepository);
+    }
+
+
+    @Test
+    void registrarSolicitud_debeLanzarClientNotFoundExceptionCuandoUsuarioNoExiste() {
+
+        String token = "token123";
+        String email = "user@test.com";
+
+        Solicitud solicitudEntrada = Solicitud.builder()
+                .idTipoPrestamo(BigInteger.ONE)
+                .email(email)
+                .monto(1000000L)
+                .plazo("12")
+                .build();
+
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser(email, "USER");
+
+        when(tokenService.validateToken(token)).thenReturn(authenticatedUser);
+        when(usuarioRepository.getUsuarioByEmail(email)).thenReturn(Mono.empty());
+
+        Mono<Solicitud> resultado = solicitudUseCase.registrarSolicitud(solicitudEntrada, token);
+
+
+        StepVerifier.create(resultado)
+                .expectErrorMatches(ex -> ex instanceof ClientNotFoundException &&
+                        ex.getMessage().contains("Cliente no encontrado"))
+                .verify();
+
+        verify(usuarioRepository, times(1)).getUsuarioByEmail(email);
+        verifyNoInteractions(tipoPrestamoRepository, solicitudRepository);
+    }
+
+    @Test
+    void registrarSolicitud_debeLanzarTipoPrestamoNotFoundExceptionCuandoTipoPrestamoNoExiste() {
+        String token = "token123";
+        String email = "user@test.com";
+
+        Solicitud solicitudEntrada = Solicitud.builder()
+                .idTipoPrestamo(BigInteger.TEN) // un ID cualquiera
+                .email(email)
+                .monto(2000000L)
+                .plazo("24")
+                .build();
+
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser(email, "USER");
+
+        when(tokenService.validateToken(token)).thenReturn(authenticatedUser);
+        when(usuarioRepository.getUsuarioByEmail(email))
+                .thenReturn(Mono.just(Usuario.builder().email(email).build()));
+        when(tipoPrestamoRepository.getTipoPrestamoById(BigInteger.TEN))
+                .thenReturn(Mono.empty());
+
+        Mono<Solicitud> resultado = solicitudUseCase.registrarSolicitud(solicitudEntrada, token);
+
+        StepVerifier.create(resultado)
+                .expectErrorMatches(ex -> ex instanceof TipoPrestamoNotFoundException &&
+                        ex.getMessage().contains("Tipo de prestamo no encontrado"))
+                .verify();
+
+        verify(usuarioRepository, times(1)).getUsuarioByEmail(email);
+        verify(tipoPrestamoRepository, times(1)).getTipoPrestamoById(BigInteger.TEN);
+        verifyNoInteractions(solicitudRepository);
     }
 
 

@@ -1,13 +1,13 @@
-# Etapa de construcción
-FROM gradle:8.8-jdk17 AS builder
+FROM eclipse-temurin:21-jre
 WORKDIR /app
-COPY . .
-RUN gradle clean build -x test
 
-# Etapa de runtime
-FROM eclipse-temurin:17-jdk-alpine
-WORKDIR /app
-COPY --from=builder /app/build/libs/*.jar app.jar
+RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
+
+COPY applications/app-service/build/libs/registrar-solicitudes-crediYA.jar app.jar
+
+RUN chown -R appuser:appgroup /app
+
+USER appuser
 
 EXPOSE 8082
 ENTRYPOINT ["java", "-jar", "app.jar"]

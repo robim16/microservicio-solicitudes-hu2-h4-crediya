@@ -9,7 +9,7 @@ import reactor.core.publisher.Mono;
 public class UserUseCase implements IUserUseCase {
     private final UsuarioRepository usuarioRepository;
     @Override
-    public Mono<Usuario> getUsuarioByEmail(String email, String token) {
-        return usuarioRepository.getUsuarioByEmail(email, token);
+    public Mono<Usuario> getUsuarioByEmail(String email) {
+        return usuarioRepository.getUsuarioByEmail(email);
     }
 }

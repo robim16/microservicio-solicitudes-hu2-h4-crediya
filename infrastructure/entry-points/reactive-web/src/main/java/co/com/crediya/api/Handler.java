@@ -5,7 +5,9 @@ import co.com.crediya.api.dto.SolicitudListResponseDTO;
 import co.com.crediya.api.dto.SolicitudResponseDTO;
 import co.com.crediya.api.dto.SolicitudUsuarioResponseDTO;
 import co.com.crediya.api.mapper.SolicitudDTOMapper;
+import co.com.crediya.api.mapper.SolicitudMapper;
 import co.com.crediya.usecase.solicitud.SolicitudUseCase;
+import co.com.crediya.usecase.solicitudlistado.SolicitudListadoUseCase;
 import co.com.crediya.usecase.user.UserUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -21,6 +23,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
+import reactor.util.context.Context;
+
 import java.util.List;
 
 
@@ -28,8 +32,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class Handler {
     private  final SolicitudUseCase solicitudUseCase;
-    private  final UserUseCase userUseCase;
+    //private  final UserUseCase userUseCase;
     private final SolicitudDTOMapper solicitudDTOMapper;
+    private final SolicitudMapper solicitudMapper;
+    private final SolicitudListadoUseCase solicitudListadoUseCase;
 
     @Operation(
             summary = "Crear una nueva solicitud",
@@ -124,51 +130,28 @@ public class Handler {
         int page = Integer.parseInt(request.queryParam("page").orElse("0"));
         int size = Integer.parseInt(request.queryParam("size").orElse("20"));
 
-
         String token = request.headers()
                 .firstHeader("Authorization")
                 .replace("Bearer ", "");
 
-
-        Mono<List<SolicitudUsuarioResponseDTO>> solicitudesListado =
-                solicitudUseCase.filtrarSolicitud(estado, email, plazo, tipoPrestamo, page, size)
-                        .flatMap(solicitudConDetalles ->
-                                userUseCase.getUsuarioByEmail(solicitudConDetalles.getEmail(), token)
-                                        .map(usuario -> new SolicitudUsuarioResponseDTO(
-                                                solicitudConDetalles.getId(),
-                                                solicitudConDetalles.getMonto(),
-                                                solicitudConDetalles.getPlazo(),
-                                                solicitudConDetalles.getEmail(),
-                                                solicitudConDetalles.getIdEstado(),
-                                                solicitudConDetalles.getIdTipoPrestamo(),
-                                                solicitudConDetalles.getTasaInteres(),
-                                                solicitudConDetalles.getCuotaMensual(),
-                                                usuario.getNombre(),
-                                                usuario.getSalarioBase()
-                                        ))
-                        )
-                        .collectList();
-
-        Mono<Long> totalSolicitudes =
-                solicitudUseCase.contarSolicitudes(estado, email, plazo, tipoPrestamo);
-
-
-        return Mono.zip(solicitudesListado, totalSolicitudes)
+        return solicitudListadoUseCase.listarSolicitudes(estado, email, plazo, tipoPrestamo, page, size)
                 .flatMap(tuple -> {
-                    List<SolicitudUsuarioResponseDTO> solicitudes = tuple.getT1();
+                    List<SolicitudUsuarioResponseDTO> solicitudes =
+                            tuple.getT1().stream()
+                                    .map(solicitudMapper::toDto)
+                                    .toList();
+
                     Long total = tuple.getT2();
 
-                    SolicitudListResponseDTO responseDTO = new SolicitudListResponseDTO(
-                            solicitudes,
-                            total,
-                            page,
-                            size
-                    );
+                    SolicitudListResponseDTO responseDTO =
+                            new SolicitudListResponseDTO(solicitudes, total, page, size);
 
                     return ServerResponse.ok()
                             .contentType(MediaType.APPLICATION_JSON)
                             .bodyValue(responseDTO);
-                });
+                })
+                .contextWrite(Context.of("token", token));
     }
+
 
 }
