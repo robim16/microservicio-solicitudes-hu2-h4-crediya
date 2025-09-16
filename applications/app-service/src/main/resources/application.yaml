@@ -16,14 +16,16 @@ routes:
     solicitudes: "/api/v1/solicitudes"
 adapters:
   r2dbc:
-    host: "${POSTGRES_HOST:localhost}"
-    port: "${POSTGRES_PORT:5434}"
-    database: "${POSTGRES_DB:solicitudesdb}"
-    schema: "public"
-    username: "${POSTGRES_USER:postgres}"
-    password: "${POSTGRES_PASSWORD:Shekina1}"
+    adapters:
+      r2dbc:
+        host: dbsolicitud
+        port: 5432
+        database: solicitudesdb
+        schema: public
+        username: ${POSTGRES_USER:postgres}
+        password: ${POSTGRES_PASSWORD:Shekina1}
   restconsumer:
-    url: "http://localhost:8081/api/v1/usuarios"
+    url: "http://usuarios-service:8081/api/v1/usuarios"
     timeout: 5000
 jwt:
   keys:

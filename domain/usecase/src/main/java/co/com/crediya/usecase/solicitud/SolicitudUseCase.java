@@ -37,8 +37,7 @@ public class SolicitudUseCase implements ISolicitudUseCase {
                                     }
                                     validSolicitud.setEmail(email);
 
-                                    return usuarioRepository.getUsuarioByEmail(email
-                                            )
+                                    return usuarioRepository.getUsuarioByEmail(email)
                                             .switchIfEmpty(Mono.error(new ClientNotFoundException("Cliente no encontrado")))
                                             .flatMap(usuario ->
                                                     tipoPrestamoRepository.getTipoPrestamoById(validSolicitud.getIdTipoPrestamo())
