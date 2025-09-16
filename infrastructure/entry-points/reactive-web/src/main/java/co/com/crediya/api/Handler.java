@@ -32,10 +32,17 @@ import java.util.List;
 @RequiredArgsConstructor
 public class Handler {
     private  final SolicitudUseCase solicitudUseCase;
+<<<<<<< HEAD
     //private  final UserUseCase userUseCase;
     private final SolicitudDTOMapper solicitudDTOMapper;
     private final SolicitudMapper solicitudMapper;
     private final SolicitudListadoUseCase solicitudListadoUseCase;
+=======
+    private  final UserUseCase userUseCase;
+    private final SolicitudListadoUseCase solicitudListadoUseCase;
+    private final SolicitudDTOMapper solicitudDTOMapper;
+    private final SolicitudMapper solicitudMapper;
+>>>>>>> b0b026278f22b69daadd049325d7401c2cd7b663
 
     @Operation(
             summary = "Crear una nueva solicitud",
