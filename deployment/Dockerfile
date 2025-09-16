@@ -1,7 +1,13 @@
-FROM eclipse-temurin:21-jdk-alpine
-VOLUME /tmp
-COPY *.jar registrar-solicitudes-crediYA.jar
-ENV JAVA_OPTS=" -Xshareclasses:name=cacheapp,cacheDir=/cache,nonfatal -XX:+UseContainerSupport -XX:MaxRAMPercentage=70 -Djava.security.egd=file:/dev/./urandom"
-# Replace with a non-root user to avoid running the container with excessive privileges
+FROM eclipse-temurin:21-jre
+WORKDIR /app
+
+RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
+
+COPY applications/app-service/build/libs/registrar-solicitudes-crediYA.jar app.jar
+
+RUN chown -R appuser:appgroup /app
+
 USER appuser
-ENTRYPOINT [ "sh", "-c", "java $JAVA_OPTS  -jar registrar-solicitudes-crediYA.jar" ]
+
+EXPOSE 8082
+ENTRYPOINT ["java", "-jar", "app.jar"]

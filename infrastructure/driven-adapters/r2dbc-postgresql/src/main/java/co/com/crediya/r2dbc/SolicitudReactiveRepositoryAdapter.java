@@ -27,7 +27,7 @@ public class SolicitudReactiveRepositoryAdapter extends ReactiveAdapterOperation
         SolicitudEntity,
         BigInteger,
         SolicitudReactiveRepository
-> implements SolicitudRepository {
+        > implements SolicitudRepository {
     private final TransactionalOperator transactionalOperator;
     private final DatabaseClient databaseClient;
 
