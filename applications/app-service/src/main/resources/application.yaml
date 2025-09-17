@@ -13,25 +13,25 @@ spring:
     include: null
   security:
     user:
-      name: admin
-      password: admin123
+      name: "admin"
+      password: "admin123"
 routes:
   paths:
     solicitudes: "/api/v1/solicitudes"
 adapters:
   r2dbc:
-    host: dbsolicitud
+    host: "dbsolicitud"
     port: 5432
-    database: solicitudesdb
-    schema: public
-    username: ${POSTGRES_USER:postgres}
-    password: ${POSTGRES_PASSWORD:Shekina1}
+    database: "solicitudesdb"
+    schema: "public"
+    username: "${POSTGRES_USER:postgres}"
+    password: "${POSTGRES_PASSWORD:Shekina1}"
   restconsumer:
     url: "http://usuarios-service:8081/api/v1/usuarios"
     timeout: 5000
 jwt:
   keys:
-    public-key: classpath:keys/public_key.pem
+    public-key: "classpath:keys/public_key.pem"
   expiration: 3600000
 management:
   endpoints:
@@ -51,6 +51,10 @@ adapter:
   restconsumer:
     timeout: 5000
     url: "http://localhost:8080"
+  sqs:
+    region: "us-east-1"
+    queueUrl: "http://localhost:4566/000000000000/sample"
+    endpoint: "http://localhost:4566 # For localstack only"
 resilience4j:
   circuitbreaker:
     instances:
