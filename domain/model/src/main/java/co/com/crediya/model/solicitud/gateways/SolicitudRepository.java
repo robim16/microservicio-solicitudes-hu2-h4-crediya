@@ -5,7 +5,6 @@ import co.com.crediya.model.solicitud.vo.SolicitudConDetalles;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.math.BigInteger;
 
 public interface SolicitudRepository {
     Mono<Solicitud> registrarSolicitud(Solicitud solicitud);

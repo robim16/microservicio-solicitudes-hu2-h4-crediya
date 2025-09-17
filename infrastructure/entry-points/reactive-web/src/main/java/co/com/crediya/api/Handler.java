@@ -42,7 +42,7 @@ public class Handler {
     @Operation(
             summary = "Crear una nueva solicitud",
             description = "Crea una solicitud a partir de un DTO con información del préstamo",
-            security = @SecurityRequirement(name = "bearerAuth"),
+            security = @SecurityRequirement(name = "BearerAuth"),
             requestBody = @RequestBody(
                     required = true,
                     content = @Content(
@@ -84,7 +84,7 @@ public class Handler {
     @Operation(
             summary = "Filtrar solicitudes",
             description = "Obtiene un listado paginado de solicitudes filtradas por estado y/o email.",
-            security = @SecurityRequirement(name = "bearerAuth"),
+            security = @SecurityRequirement(name = "BearerAuth"),
             parameters = {
                     @Parameter(
                             in = ParameterIn.QUERY,

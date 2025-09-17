@@ -11,19 +11,21 @@ spring:
       path: "/h2"
   profiles:
     include: null
+  security:
+    user:
+      name: admin
+      password: admin123
 routes:
   paths:
     solicitudes: "/api/v1/solicitudes"
 adapters:
   r2dbc:
-    adapters:
-      r2dbc:
-        host: dbsolicitud
-        port: 5432
-        database: solicitudesdb
-        schema: public
-        username: ${POSTGRES_USER:postgres}
-        password: ${POSTGRES_PASSWORD:Shekina1}
+    host: dbsolicitud
+    port: 5432
+    database: solicitudesdb
+    schema: public
+    username: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD:Shekina1}
   restconsumer:
     url: "http://usuarios-service:8081/api/v1/usuarios"
     timeout: 5000
