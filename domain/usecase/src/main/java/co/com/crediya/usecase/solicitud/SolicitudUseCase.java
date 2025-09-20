@@ -1,5 +1,8 @@
 package co.com.crediya.usecase.solicitud;
 
+import co.com.crediya.model.estados.gateways.EstadosRepository;
+import co.com.crediya.model.notificacion.Notificacion;
+import co.com.crediya.model.notificacion.gateways.NotificacionRepository;
 import co.com.crediya.model.solicitud.Solicitud;
 import co.com.crediya.model.solicitud.gateways.SolicitudRepository;
 import co.com.crediya.model.solicitud.vo.SolicitudConDetalles;
@@ -15,12 +18,16 @@ import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.math.BigInteger;
+
 
 @RequiredArgsConstructor
 public class SolicitudUseCase implements ISolicitudUseCase {
     private final SolicitudRepository solicitudRepository;
     private final UsuarioRepository usuarioRepository;
     private final TipoPrestamoRepository tipoPrestamoRepository;
+    private final NotificacionRepository notificacionRepository;
+    private final EstadosRepository estadosRepository;
     private final TokenService tokenService;
 
     @Override
@@ -77,6 +84,31 @@ public class SolicitudUseCase implements ISolicitudUseCase {
     @Override
     public Mono<Long> contarSolicitudes(String estado, String email, String plazo, String tipoPrestamo) {
         return solicitudRepository.contarSolicitudes(estado, email, plazo, tipoPrestamo);
+    }
+
+
+    @Override
+    public Mono<Solicitud> editarEstado(BigInteger id, BigInteger nuevoEstado) {
+        return solicitudRepository.findById(id)
+                .switchIfEmpty(Mono.error(new RuntimeException("Solicitud no encontrada con id " + id)))
+                .flatMap(solicitud -> {
+                    solicitud.setIdEstado(nuevoEstado);
+                    return solicitudRepository.updateStatus(solicitud);
+                })
+                .flatMap(solicitudActualizada ->
+                        estadosRepository.findById(solicitudActualizada.getIdEstado())
+                                .flatMap(estadoSolicitud -> {
+                                    Notificacion notification = Notificacion.builder()
+                                            .type("SOLICITUD_ACTUALIZADA")
+                                            .payload("Solicitud " + solicitudActualizada.getId() +
+                                                    " actualizada a estado " + estadoSolicitud.getNombre())
+                                            .destino("SQS")
+                                            .build();
+
+                                    return notificacionRepository.enviar(notification)
+                                            .thenReturn(solicitudActualizada);
+                                })
+                );
     }
 
 }

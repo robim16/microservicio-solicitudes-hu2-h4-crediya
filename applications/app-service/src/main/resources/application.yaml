@@ -18,14 +18,15 @@ spring:
 routes:
   paths:
     solicitudes: "/api/v1/solicitudes"
+    estadoSolicitud: "/api/v1/solicitudes/{id:\\d+}"
 adapters:
   r2dbc:
-    host: "dbsolicitud"
+    host: dbsolicitud
     port: 5432
-    database: "solicitudesdb"
-    schema: "public"
-    username: "${POSTGRES_USER:postgres}"
-    password: "${POSTGRES_PASSWORD:Shekina1}"
+    database: solicitudesdb
+    schema: public
+    username: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD:Shekina1}
   restconsumer:
     url: "http://usuarios-service:8081/api/v1/usuarios"
     timeout: 5000
@@ -53,8 +54,12 @@ adapter:
     url: "http://localhost:8080"
   sqs:
     region: "us-east-1"
-    queueUrl: "http://localhost:4566/000000000000/sample"
-    endpoint: "http://localhost:4566 # For localstack only"
+    queueUrl: "https://sqs.us-east-1.amazonaws.com/276824024432/solicitudes-queue"
+    #endpoint: "http://localhost:4566"
+aws:
+  access-key-id: "${AWS_ACCESS_KEY_ID:AKIAUA477MVYILC3S3O3}"
+  secret-access-key: "${AWS_SECRET_ACCESS_KEY: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}"
+  region: "${AWS_REGION:us-east-1}"
 resilience4j:
   circuitbreaker:
     instances:

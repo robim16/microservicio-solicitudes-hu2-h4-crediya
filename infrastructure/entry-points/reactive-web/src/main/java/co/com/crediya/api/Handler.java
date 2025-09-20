@@ -1,9 +1,6 @@
 package co.com.crediya.api;
 
-import co.com.crediya.api.dto.CreateSolicitudDTO;
-import co.com.crediya.api.dto.SolicitudListResponseDTO;
-import co.com.crediya.api.dto.SolicitudResponseDTO;
-import co.com.crediya.api.dto.SolicitudUsuarioResponseDTO;
+import co.com.crediya.api.dto.*;
 import co.com.crediya.api.mapper.SolicitudDTOMapper;
 import co.com.crediya.api.mapper.SolicitudMapper;
 import co.com.crediya.usecase.solicitud.SolicitudUseCase;
@@ -25,6 +22,7 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 import reactor.util.context.Context;
 
+import java.math.BigInteger;
 import java.util.List;
 
 
@@ -155,5 +153,11 @@ public class Handler {
                 .contextWrite(Context.of("token", token));
     }
 
-
+    public Mono<ServerResponse> listenEditStatus(ServerRequest serverRequest) {
+        BigInteger id = BigInteger.valueOf(Integer.parseInt(serverRequest.pathVariable("id")));
+        return serverRequest.bodyToMono(EstadoSolicitudDTO.class)
+                .flatMap(dto -> solicitudUseCase.editarEstado(id, dto.idEstado()))
+                .flatMap(updatedSolicitud -> ServerResponse.ok().bodyValue(updatedSolicitud))
+                .onErrorResume(e -> ServerResponse.badRequest().bodyValue(e.getMessage()));
+    }
 }

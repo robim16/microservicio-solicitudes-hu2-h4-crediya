@@ -28,6 +28,7 @@ public class SecurityConfig {
                 .authorizeExchange(auth -> auth
                         .pathMatchers(HttpMethod.GET, "/api/v1/solicitudes/**").hasAnyRole("ADMIN", "ASESOR")
                         .pathMatchers(HttpMethod.POST, "/api/v1/solicitudes").hasRole("CLIENTE")
+                        .pathMatchers(HttpMethod.PUT, "/api/v1/solicitudes/**").hasAnyRole("ADMIN", "ASESOR")
                         .pathMatchers(
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
