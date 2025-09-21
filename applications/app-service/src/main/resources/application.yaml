@@ -54,11 +54,11 @@ adapter:
     url: "http://localhost:8080"
   sqs:
     region: "us-east-1"
-    queueUrl: "https://sqs.us-east-1.amazonaws.com/276824024432/solicitudes-queue"
+    queueUrl: "https://sqs.us-east-1.amazonaws.com/${AWS_ACCOUNT_ID}/solicitudes-queue"
     #endpoint: "http://localhost:4566"
 aws:
-  access-key-id: "${AWS_ACCESS_KEY_ID:AKIAUA477MVYILC3S3O3}"
-  secret-access-key: "${AWS_SECRET_ACCESS_KEY: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}"
+  access-key-id: "${AWS_ACCESS_KEY_ID:AWS_ACCESS_KEY_ID}"
+  secret-access-key: "${AWS_SECRET_ACCESS_KEY:AWS_SECRET_ACCESS_KEY}"
   region: "${AWS_REGION:us-east-1}"
 resilience4j:
   circuitbreaker:
