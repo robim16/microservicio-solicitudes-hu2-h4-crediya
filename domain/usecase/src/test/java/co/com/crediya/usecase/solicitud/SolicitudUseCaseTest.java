@@ -1,5 +1,9 @@
 package co.com.crediya.usecase.solicitud;
 
+import co.com.crediya.model.estados.Estados;
+import co.com.crediya.model.estados.gateways.EstadosRepository;
+import co.com.crediya.model.notificacion.Notificacion;
+import co.com.crediya.model.notificacion.gateways.NotificacionRepository;
 import co.com.crediya.model.solicitud.Solicitud;
 import co.com.crediya.model.solicitud.vo.SolicitudConDetalles;
 import co.com.crediya.model.solicitud.gateways.SolicitudRepository;
@@ -28,26 +32,34 @@ import static org.mockito.Mockito.*;
 
 class SolicitudUseCaseTest {
 
-    // Dependencias simuladas
     private SolicitudRepository solicitudRepository;
     private UsuarioRepository usuarioRepository;
     private TipoPrestamoRepository tipoPrestamoRepository;
+    private NotificacionRepository notificacionRepository;
+    private EstadosRepository estadosRepository;
     private TokenService tokenService;
     private SolicitudUseCase solicitudUseCase;
+    private final BigInteger solicitudId = BigInteger.ONE;
+    private final BigInteger nuevoEstado = BigInteger.TWO;
+
 
     @BeforeEach
     void setUp() {
-        // Creamos mocks de cada dependencia
+
         solicitudRepository = Mockito.mock(SolicitudRepository.class);
         usuarioRepository = Mockito.mock(UsuarioRepository.class);
         tipoPrestamoRepository = Mockito.mock(TipoPrestamoRepository.class);
         tokenService = Mockito.mock(TokenService.class);
+        estadosRepository = Mockito.mock(EstadosRepository.class);
+        notificacionRepository = Mockito.mock(NotificacionRepository.class);
 
-        // Inyectamos los mocks en el caso de uso
+
         solicitudUseCase = new SolicitudUseCase(
                 solicitudRepository,
                 usuarioRepository,
                 tipoPrestamoRepository,
+                notificacionRepository,
+                estadosRepository,
                 tokenService
         );
     }
@@ -84,7 +96,6 @@ class SolicitudUseCaseTest {
                 .plazo("12")
                 .email(email)
                 .idTipoPrestamo(BigInteger.ONE)
-                .tasaInteres("0.05")
                 .idEstado(BigInteger.ONE)
                 .build();
 
@@ -114,8 +125,8 @@ class SolicitudUseCaseTest {
     @Test
     void registrarSolicitud_debeLanzarInvalidUserExceptionSiEmailNoCoincide() {
         String token = "valid-token";
-        String emailToken = "user@test.com";      // Email en el token
-        String emailSolicitud = "otro@test.com";  // Email distinto en la solicitud
+        String emailToken = "user@test.com";
+        String emailSolicitud = "otro@test.com";
 
         Solicitud solicitudEntrada = new Solicitud();
         solicitudEntrada.setMonto(1000000L);
@@ -172,7 +183,7 @@ class SolicitudUseCaseTest {
         String email = "user@test.com";
 
         Solicitud solicitudEntrada = Solicitud.builder()
-                .idTipoPrestamo(BigInteger.TEN) // un ID cualquiera
+                .idTipoPrestamo(BigInteger.TEN)
                 .email(email)
                 .monto(2000000L)
                 .plazo("24")
@@ -202,7 +213,6 @@ class SolicitudUseCaseTest {
     @Test
     void filtrarSolicitud_debeRetornarSolicitudesCorrectamente() {
 
-        // Creamos objetos simulados que devolverá el repositorio
         SolicitudConDetalles solicitud1 = new SolicitudConDetalles(
                 BigInteger.ONE,
                 1000000L,
@@ -225,7 +235,7 @@ class SolicitudUseCaseTest {
                 new BigDecimal("85956.23")
         );
 
-        // Configuramos el mock del repositorio para que devuelva esas solicitudes
+
         when(solicitudRepository.filtrarSolicitud(
                 any(), any(), any(), any(), anyInt(), anyInt()
         )).thenReturn(Flux.just(solicitud1, solicitud2));
@@ -235,13 +245,12 @@ class SolicitudUseCaseTest {
                 "1", null, null, null, 0, 10
         );
 
-        // Verificamos que se reciben exactamente las 2 solicitudes simuladas
+
         StepVerifier.create(resultado)
                 .expectNext(solicitud1)
                 .expectNext(solicitud2)
                 .verifyComplete();
 
-        // Verificamos que el repositorio se llamó una vez con los parámetros esperados
         verify(solicitudRepository, times(1))
                 .filtrarSolicitud("1", null, null, null, 10, 0);
     }
@@ -249,7 +258,6 @@ class SolicitudUseCaseTest {
     @Test
     void filtrarSolicitud_debePropagarErrorComoErrorFilterException() {
 
-        // Simulamos que el repositorio lanza un error
         when(solicitudRepository.filtrarSolicitud(any(), any(), any(), any(), anyInt(), anyInt()))
                 .thenReturn(Flux.error(new RuntimeException("DB error")));
 
@@ -257,8 +265,6 @@ class SolicitudUseCaseTest {
                 "1", null, null, null, 0, 10
         );
 
-
-        // Validamos que el use case capture el error y lo envuelva en ErrorFilterException
         StepVerifier.create(resultado)
                 .expectErrorMatches(throwable ->
                         throwable instanceof ErrorFilterException &&
@@ -266,8 +272,72 @@ class SolicitudUseCaseTest {
                 )
                 .verify();
 
-        // Verificamos que el repositorio se llamó una sola vez
         verify(solicitudRepository, times(1))
                 .filtrarSolicitud("1", null, null, null, 10, 0);
+    }
+
+    @Test
+    void editarEstado_WhenSolicitudExists_ShouldUpdateAndNotify() {
+        Solicitud solicitud = new Solicitud();
+        solicitud.setId(solicitudId);
+        solicitud.setIdEstado(BigInteger.ONE);
+
+        Solicitud solicitudActualizada = new Solicitud();
+        solicitudActualizada.setId(solicitudId);
+        solicitudActualizada.setIdEstado(nuevoEstado);
+
+        Estados estado = new Estados();
+        estado.setId(nuevoEstado);
+        estado.setNombre("APROBADA");
+
+        when(solicitudRepository.findById(solicitudId)).thenReturn(Mono.just(solicitud));
+        when(solicitudRepository.updateStatus(any(Solicitud.class))).thenReturn(Mono.just(solicitudActualizada));
+        when(estadosRepository.findById(nuevoEstado)).thenReturn(Mono.just(estado));
+        when(notificacionRepository.enviar(any(Notificacion.class))).thenReturn(Mono.just(new Notificacion()));
+
+        StepVerifier.create(solicitudUseCase.editarEstado(solicitudId, nuevoEstado))
+                .expectNextMatches(s -> s.getIdEstado().equals(nuevoEstado))
+                .verifyComplete();
+
+        verify(solicitudRepository).findById(solicitudId);
+        verify(solicitudRepository).updateStatus(any(Solicitud.class));
+        verify(estadosRepository).findById(nuevoEstado);
+        verify(notificacionRepository).enviar(any(Notificacion.class));
+    }
+
+    @Test
+    void editarEstado_WhenSolicitudDoesNotExist_ShouldReturnError() {
+        when(solicitudRepository.findById(solicitudId)).thenReturn(Mono.empty());
+
+        StepVerifier.create(solicitudUseCase.editarEstado(solicitudId, nuevoEstado))
+                .expectErrorMatches(e -> e instanceof RuntimeException &&
+                        e.getMessage().contains("Solicitud no encontrada con id"))
+                .verify();
+
+        verify(solicitudRepository).findById(solicitudId);
+        verifyNoMoreInteractions(solicitudRepository, estadosRepository, notificacionRepository);
+    }
+
+    @Test
+    void editarEstado_WhenEstadoNotFound_ShouldReturnError() {
+        Solicitud solicitud = new Solicitud();
+        solicitud.setId(solicitudId);
+        solicitud.setIdEstado(BigInteger.ONE);
+
+        Solicitud solicitudActualizada = new Solicitud();
+        solicitudActualizada.setId(solicitudId);
+        solicitudActualizada.setIdEstado(nuevoEstado);
+
+        when(solicitudRepository.findById(solicitudId)).thenReturn(Mono.just(solicitud));
+        when(solicitudRepository.updateStatus(any(Solicitud.class))).thenReturn(Mono.just(solicitudActualizada));
+        when(estadosRepository.findById(nuevoEstado)).thenReturn(Mono.empty());
+
+        StepVerifier.create(solicitudUseCase.editarEstado(solicitudId, nuevoEstado))
+                .verifyComplete();
+
+        verify(solicitudRepository).findById(solicitudId);
+        verify(solicitudRepository).updateStatus(any(Solicitud.class));
+        verify(estadosRepository).findById(nuevoEstado);
+        verifyNoInteractions(notificacionRepository);
     }
 }

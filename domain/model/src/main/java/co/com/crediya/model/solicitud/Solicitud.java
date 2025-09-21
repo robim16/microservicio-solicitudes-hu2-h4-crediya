@@ -21,5 +21,4 @@ public class Solicitud {
     private String email;
     private BigInteger idEstado;
     private BigInteger idTipoPrestamo;
-    //private String tasaInteres;
 }
