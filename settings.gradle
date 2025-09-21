@@ -30,3 +30,7 @@ include ':jwt-token-service-adapter'
 project(':jwt-token-service-adapter').projectDir = file('./infrastructure/driven-adapters/jwt-token-service-adapter')
 include ':password-service-adapter'
 project(':password-service-adapter').projectDir = file('./infrastructure/driven-adapters/password-service-adapter')
+include ':metrics'
+project(':metrics').projectDir = file('./infrastructure/helpers/metrics')
+include ':sqs-sender'
+project(':sqs-sender').projectDir = file('./infrastructure/driven-adapters/sqs-sender')

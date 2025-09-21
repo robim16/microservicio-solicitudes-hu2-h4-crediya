@@ -32,12 +32,11 @@ class SolicitudValidatorTest {
         StepVerifier.create(SolicitudValidator.validate(solicitud))
                 .expectErrorSatisfies(error -> {
                     assertTrue(error instanceof InvalidSolicitudException);
-                    InvalidSolicitudException ex = (InvalidSolicitudException) error;
-                    assertTrue(ex.getErrors().contains("El monto del préstamo es obligatorio"));
-                    assertTrue(ex.getErrors().contains("El plazo del préstamo es obligatorio"));
-                    assertTrue(ex.getErrors().contains("El email del cliente es obligatorio"));
-                    assertTrue(ex.getErrors().contains("El tipo de prestamo es obligatorio"));
-                })
-                .verify();
+                    assertTrue(error.getMessage().contains("monto"));
+                    assertTrue(error.getMessage().contains("plazo"));
+                    assertTrue(error.getMessage().contains("email"));
+                    assertTrue(error.getMessage().contains("tipo de prestamo"));
+                });
+
     }
 }

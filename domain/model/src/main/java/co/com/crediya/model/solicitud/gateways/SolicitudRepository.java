@@ -7,8 +7,11 @@ import reactor.core.publisher.Mono;
 
 import java.math.BigInteger;
 
+
 public interface SolicitudRepository {
     Mono<Solicitud> registrarSolicitud(Solicitud solicitud);
     Flux<SolicitudConDetalles> filtrarSolicitud(String estado, String email, String plazo, String tipoPrestamo, int limit, int offset);
     Mono<Long> contarSolicitudes(String estado, String email, String plazo, String tipoPrestamo);
+    Mono<Solicitud> findById(BigInteger id);
+    Mono<Solicitud> updateStatus(Solicitud solicitud);
 }

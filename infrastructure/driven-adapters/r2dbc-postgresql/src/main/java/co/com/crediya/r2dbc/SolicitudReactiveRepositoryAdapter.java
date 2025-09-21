@@ -3,6 +3,7 @@ package co.com.crediya.r2dbc;
 import co.com.crediya.model.solicitud.Solicitud;
 import co.com.crediya.model.solicitud.gateways.SolicitudRepository;
 import co.com.crediya.model.solicitud.vo.SolicitudConDetalles;
+import co.com.crediya.model.usuario.Usuario;
 import co.com.crediya.model.usuario.gateways.UsuarioRepository;
 import co.com.crediya.r2dbc.entity.SolicitudEntity;
 import co.com.crediya.r2dbc.helper.ReactiveAdapterOperations;
@@ -113,6 +114,24 @@ public class SolicitudReactiveRepositoryAdapter extends ReactiveAdapterOperation
         if (tipoPrestamo != null) spec = spec.bind("tipoPrestamo", tipoPrestamo);
 
         return spec.map((row, meta) -> row.get("total", Long.class)).one();
+    }
+
+    @Override
+    public Mono<Solicitud> findById(BigInteger id) {
+        return repository.findById(id)
+                .map(entity -> mapper.map(entity, Solicitud.class));
+    }
+
+    @Override
+    public Mono<Solicitud> updateStatus(Solicitud solicitud) {
+        return Mono.fromCallable(() -> mapper.map(solicitud, SolicitudEntity.class))
+                .subscribeOn(Schedulers.boundedElastic())
+                .flatMap(entity -> {
+                    return repository.save(entity)
+                            .doOnSuccess(saved -> log.info("Se ha editado la solicitud"));
+                })
+                .map(saved -> mapper.map(saved, Solicitud.class))
+                .as(transactionalOperator::transactional);
     }
 
     private SolicitudConDetalles mapRow(Row row, RowMetadata meta) {

@@ -1,9 +1,6 @@
 package co.com.crediya.api;
 
-import co.com.crediya.api.dto.CreateSolicitudDTO;
-import co.com.crediya.api.dto.SolicitudListResponseDTO;
-import co.com.crediya.api.dto.SolicitudResponseDTO;
-import co.com.crediya.api.dto.SolicitudUsuarioResponseDTO;
+import co.com.crediya.api.dto.*;
 import co.com.crediya.api.mapper.SolicitudDTOMapper;
 import co.com.crediya.api.mapper.SolicitudMapper;
 import co.com.crediya.usecase.solicitud.SolicitudUseCase;
@@ -25,6 +22,7 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 import reactor.util.context.Context;
 
+import java.math.BigInteger;
 import java.util.List;
 
 
@@ -42,7 +40,7 @@ public class Handler {
     @Operation(
             summary = "Crear una nueva solicitud",
             description = "Crea una solicitud a partir de un DTO con información del préstamo",
-            security = @SecurityRequirement(name = "bearerAuth"),
+            security = @SecurityRequirement(name = "BearerAuth"),
             requestBody = @RequestBody(
                     required = true,
                     content = @Content(
@@ -84,7 +82,7 @@ public class Handler {
     @Operation(
             summary = "Filtrar solicitudes",
             description = "Obtiene un listado paginado de solicitudes filtradas por estado y/o email.",
-            security = @SecurityRequirement(name = "bearerAuth"),
+            security = @SecurityRequirement(name = "BearerAuth"),
             parameters = {
                     @Parameter(
                             in = ParameterIn.QUERY,
@@ -155,5 +153,43 @@ public class Handler {
                 .contextWrite(Context.of("token", token));
     }
 
-
+    @Operation(
+            summary = "Editar el estado de las solicitudes",
+            description = "Edita el estado de las solicitudes y notifica vía email.",
+            security = @SecurityRequirement(name = "BearerAuth"),
+            requestBody = @RequestBody(
+                    required = true,
+                    content = @Content(
+                            schema = @Schema(implementation = EstadoSolicitudDTO.class)
+                    )
+            ),
+            parameters = {
+                    @Parameter(
+                            name = "id",
+                            description = "Identificador de la solicitud",
+                            required = true,
+                            example = "123",
+                            in = ParameterIn.PATH
+                    )
+            },
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Solicitud actualizada",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = SolicitudResponseDTO.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "401", description = "No autorizado"),
+                    @ApiResponse(responseCode = "403", description = "Prohibido")
+            }
+    )
+    public Mono<ServerResponse> listenEditStatus(ServerRequest serverRequest) {
+        BigInteger id = BigInteger.valueOf(Integer.parseInt(serverRequest.pathVariable("id")));
+        return serverRequest.bodyToMono(EstadoSolicitudDTO.class)
+                .flatMap(dto -> solicitudUseCase.editarEstado(id, dto.idEstado()))
+                .flatMap(updatedSolicitud -> ServerResponse.ok().bodyValue(updatedSolicitud))
+                .onErrorResume(e -> ServerResponse.badRequest().bodyValue(e.getMessage()));
+    }
 }
