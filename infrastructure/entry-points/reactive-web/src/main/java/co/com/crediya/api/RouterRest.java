@@ -37,6 +37,14 @@ public class RouterRest {
                     beanClass = Handler.class,
                     beanMethod = "listenFilterSolicitud"
 
+            ),
+            @RouterOperation(
+                    path = "/api/v1/solicitudes/{id}",
+                    produces = MediaType.APPLICATION_JSON_VALUE,
+                    method = { RequestMethod.PUT },
+                    beanClass = Handler.class,
+                    beanMethod = "listenEditStatus"
+
             )
     })
     public RouterFunction<ServerResponse> routerFunction(Handler handler) {

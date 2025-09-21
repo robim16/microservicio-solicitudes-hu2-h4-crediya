@@ -153,6 +153,38 @@ public class Handler {
                 .contextWrite(Context.of("token", token));
     }
 
+    @Operation(
+            summary = "Editar el estado de las solicitudes",
+            description = "Edita el estado de las solicitudes y notifica vía email.",
+            security = @SecurityRequirement(name = "BearerAuth"),
+            requestBody = @RequestBody(
+                    required = true,
+                    content = @Content(
+                            schema = @Schema(implementation = EstadoSolicitudDTO.class)
+                    )
+            ),
+            parameters = {
+                    @Parameter(
+                            name = "id",
+                            description = "Identificador de la solicitud",
+                            required = true,
+                            example = "123",
+                            in = ParameterIn.PATH
+                    )
+            },
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Solicitud actualizada",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = SolicitudResponseDTO.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "401", description = "No autorizado"),
+                    @ApiResponse(responseCode = "403", description = "Prohibido")
+            }
+    )
     public Mono<ServerResponse> listenEditStatus(ServerRequest serverRequest) {
         BigInteger id = BigInteger.valueOf(Integer.parseInt(serverRequest.pathVariable("id")));
         return serverRequest.bodyToMono(EstadoSolicitudDTO.class)
