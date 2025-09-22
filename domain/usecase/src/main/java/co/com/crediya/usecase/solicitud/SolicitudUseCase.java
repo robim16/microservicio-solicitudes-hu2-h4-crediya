@@ -3,6 +3,7 @@ package co.com.crediya.usecase.solicitud;
 import co.com.crediya.model.estados.gateways.EstadosRepository;
 import co.com.crediya.model.notificacion.Notificacion;
 import co.com.crediya.model.notificacion.gateways.NotificacionRepository;
+import co.com.crediya.model.prestamos.Prestamos;
 import co.com.crediya.model.solicitud.Solicitud;
 import co.com.crediya.model.solicitud.gateways.SolicitudRepository;
 import co.com.crediya.model.solicitud.vo.SolicitudConDetalles;
@@ -29,6 +30,7 @@ public class SolicitudUseCase implements ISolicitudUseCase {
     private final NotificacionRepository notificacionRepository;
     private final EstadosRepository estadosRepository;
     private final TokenService tokenService;
+
 
     @Override
     public Mono<Solicitud> registrarSolicitud(Solicitud solicitud, String token) {
@@ -105,8 +107,21 @@ public class SolicitudUseCase implements ISolicitudUseCase {
                                             .destino("SQS")
                                             .build();
 
-                                    return notificacionRepository.enviar(notification)
+                                    return notificacionRepository.enviar(notification, "solicitudes_queue")
                                             .thenReturn(solicitudActualizada);
+                                })
+                );
+    }
+
+    @Override
+    public Flux<Prestamos> prestamosActivos() {
+        return solicitudRepository.prestamosActivos()
+                .flatMap(prestamos ->
+                        usuarioRepository.getUsuarioByEmail(prestamos.getEmail())
+                                .switchIfEmpty(Mono.error(new ClientNotFoundException("Cliente no encontrado")))
+                                .map(usuario -> {
+                                    prestamos.setSalarioBase(usuario.getSalarioBase());
+                                    return prestamos;
                                 })
                 );
     }

@@ -1,18 +1,19 @@
-package co.com.crediya.model.solicitud.vo;
-
-import lombok.AllArgsConstructor;
+package co.com.crediya.model.prestamos;
 import lombok.Builder;
-import lombok.Data;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-@Data
-@Builder
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class SolicitudConDetalles {
+@Builder(toBuilder = true)
+public class Prestamos {
     private BigInteger id;
     private Long monto;
     private String plazo;
@@ -20,6 +21,5 @@ public class SolicitudConDetalles {
     private BigInteger idEstado;
     private BigInteger idTipoPrestamo;
     private BigDecimal tasaInteres;
-    private BigDecimal cuotaMensual;
-
+    private Long salarioBase;
 }

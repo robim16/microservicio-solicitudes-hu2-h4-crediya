@@ -1,5 +1,6 @@
 package co.com.crediya.r2dbc;
 
+import co.com.crediya.model.prestamos.Prestamos;
 import co.com.crediya.model.solicitud.Solicitud;
 import co.com.crediya.model.solicitud.gateways.SolicitudRepository;
 import co.com.crediya.model.solicitud.vo.SolicitudConDetalles;
@@ -32,7 +33,6 @@ public class SolicitudReactiveRepositoryAdapter extends ReactiveAdapterOperation
     private final TransactionalOperator transactionalOperator;
     private final DatabaseClient databaseClient;
 
-    //private final UsuarioRepository usuarioRepository;
     private static final Logger log = LoggerFactory.getLogger(SolicitudReactiveRepositoryAdapter.class);
     public SolicitudReactiveRepositoryAdapter(SolicitudReactiveRepository repository, ObjectMapper mapper, TransactionalOperator transactionalOperator, DatabaseClient databaseClient) {
         super(repository, mapper, d -> mapper.map(d, Solicitud.class));
@@ -133,6 +133,39 @@ public class SolicitudReactiveRepositoryAdapter extends ReactiveAdapterOperation
                 .map(saved -> mapper.map(saved, Solicitud.class))
                 .as(transactionalOperator::transactional);
     }
+
+    @Override
+    public Flux<Prestamos> prestamosActivos() {
+        String sql = """
+        SELECT 
+            s.id,
+            s.monto,
+            s.plazo,
+            s.email,
+            s.id_estado,
+            s.id_tipo_prestamo,
+            t.tasa_interes
+        FROM solicitudes s
+        JOIN tipo_prestamos t ON s.id_tipo_prestamo = t.id
+        WHERE s.id_estado = 4
+    """;
+
+        return databaseClient.sql(sql)
+                .map((row, metadata) -> {
+                    Prestamos p = new Prestamos();
+                    p.setId(row.get("id", BigInteger.class));
+                    p.setMonto(row.get("monto", Long.class));
+                    p.setPlazo(row.get("plazo", String.class));
+                    p.setEmail(row.get("email", String.class));
+                    p.setIdEstado(row.get("id_estado", BigInteger.class));
+                    p.setIdTipoPrestamo(row.get("id_tipo_prestamo", BigInteger.class));
+                    p.setTasaInteres(row.get("tasa_interes", BigDecimal.class));
+                    p.setSalarioBase(null);
+                    return p;
+                })
+                .all();
+    }
+
 
     private SolicitudConDetalles mapRow(Row row, RowMetadata meta) {
         return new SolicitudConDetalles(
