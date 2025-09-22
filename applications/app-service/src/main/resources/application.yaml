@@ -55,7 +55,7 @@ adapter:
   sqs:
     region: "us-east-1"
     queueUrl: "https://sqs.us-east-1.amazonaws.com/${AWS_ACCOUNT_ID}/solicitudes-queue"
-    queueUrl2: "https://sqs.us-east-1.amazonaws.com/123456789012/notificaciones-queue"
+    queueUrl2: "https://sqs.us-east-1.amazonaws.com/276824024432/capacidad-endeudamiento"
 aws:
   access-key-id: "${AWS_ACCESS_KEY_ID:AWS_ACCESS_KEY_ID}"
   secret-access-key: "${AWS_SECRET_ACCESS_KEY:AWS_SECRET_ACCESS_KEY}"

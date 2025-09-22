@@ -119,11 +119,20 @@ public class SolicitudUseCase implements ISolicitudUseCase {
                 .flatMap(prestamos ->
                         usuarioRepository.getUsuarioByEmail(prestamos.getEmail())
                                 .switchIfEmpty(Mono.error(new ClientNotFoundException("Cliente no encontrado")))
-                                .map(usuario -> {
+                                .flatMap(usuario -> {
                                     prestamos.setSalarioBase(usuario.getSalarioBase());
-                                    return prestamos;
+
+                                    Notificacion notification = Notificacion.builder()
+                                            .type("PRESTAMOS_ACTIVOS")
+                                            .payload(prestamos.toJson())
+                                            .destino("SQS")
+                                            .build();
+
+                                    return notificacionRepository.enviar(notification, "capacidad-endeudamiento")
+                                            .thenReturn(prestamos);
                                 })
                 );
     }
+
 
 }

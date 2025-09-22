@@ -22,4 +22,27 @@ public class Prestamos {
     private BigInteger idTipoPrestamo;
     private BigDecimal tasaInteres;
     private Long salarioBase;
+
+    public String toJson() {
+        return String.format(
+                "{" +
+                        "\"id\":%s," +
+                        "\"monto\":%d," +
+                        "\"plazo\":\"%s\"," +
+                        "\"email\":\"%s\"," +
+                        "\"idEstado\":%s," +
+                        "\"idTipoPrestamo\":%s," +
+                        "\"tasaInteres\":%s," +
+                        "\"salarioBase\":%d" +
+                        "}",
+                id,
+                monto,
+                plazo,
+                email,
+                idEstado,
+                idTipoPrestamo,
+                tasaInteres,
+                salarioBase
+        );
+    }
 }
