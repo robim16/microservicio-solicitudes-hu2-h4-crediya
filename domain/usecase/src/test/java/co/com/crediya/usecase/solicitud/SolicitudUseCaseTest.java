@@ -124,6 +124,7 @@ class SolicitudUseCaseTest {
 
     @Test
     void registrarSolicitud_debeLanzarInvalidUserExceptionSiEmailNoCoincide() {
+
         String token = "valid-token";
         String emailToken = "user@test.com";
         String emailSolicitud = "otro@test.com";
