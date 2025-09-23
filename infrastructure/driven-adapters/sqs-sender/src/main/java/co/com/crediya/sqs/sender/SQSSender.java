@@ -26,7 +26,9 @@ public class SQSSender implements NotificacionRepository {
     }*/
 
     private SendMessageRequest buildRequest(Notificacion notificacion, String queue) {
-        String url = queue == "solicitudes-queue" ? properties.queueUrl() : properties.queueUrl2();
+        String url = "solicitudes-queue".equals(queue)
+                ? properties.queueUrl()
+                : properties.queueUrl2();
         return SendMessageRequest.builder()
                 //.queueUrl(properties.queueUrl())
                 .queueUrl(url)
@@ -40,7 +42,7 @@ public class SQSSender implements NotificacionRepository {
         return Mono.fromCallable(() -> buildRequest(notificacion, queue))
                 .flatMap(request -> Mono.fromFuture(client.sendMessage(request)))
                 .map(response -> {
-                    log.info("Mensaje enviado a SQS con ID={}", response.messageId());
+                    log.info("Mensaje enviado a la cola SQS de nombre={} con ID={}", queue, response.messageId());
                     return notificacion.toBuilder()
                             .id(response.messageId())
                             .build();

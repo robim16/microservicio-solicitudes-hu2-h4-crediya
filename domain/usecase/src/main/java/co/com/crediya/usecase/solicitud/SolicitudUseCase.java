@@ -50,14 +50,33 @@ public class SolicitudUseCase implements ISolicitudUseCase {
                                             .switchIfEmpty(Mono.error(new ClientNotFoundException("Cliente no encontrado")))
                                             .flatMap(usuario ->
                                                     tipoPrestamoRepository.getTipoPrestamoById(validSolicitud.getIdTipoPrestamo())
-                                                            .switchIfEmpty(Mono.error(new TipoPrestamoNotFoundException("Tipo de prestamo no encontrado")))
+                                                            .switchIfEmpty(Mono.error(new TipoPrestamoNotFoundException("Tipo de préstamo no encontrado")))
                                                             .flatMap(tipoPrestamo ->
                                                                     solicitudRepository.registrarSolicitud(validSolicitud)
+                                                                            .flatMap(solicitudNueva -> {
+                                                                                if (tipoPrestamo.getValidacionAutomatica()) {
+                                                                                    return this.prestamosActivos(solicitudNueva)
+                                                                                            .then(Mono.just(solicitudNueva))
+                                                                                            .doOnNext(s -> {
+                                                                                                System.out.println("Solicitud validada automáticamente: " + s.getId());
+                                                                                            })
+                                                                                            .onErrorResume(ex -> Mono.error(
+                                                                                                    new RuntimeException(
+                                                                                                            "Error en validación automática para solicitud " + solicitudNueva.getId(), ex
+                                                                                                    )
+                                                                                            ));
+                                                                                }
+                                                                                return Mono.just(solicitudNueva)
+                                                                                        .doOnNext(s -> {
+                                                                                            System.out.println("Solicitud registrada sin validación automática: " + s.getId());
+                                                                                        });
+                                                                            })
                                                             )
                                             );
                                 })
                 );
     }
+
 
     @Override
     public Flux<SolicitudConDetalles> filtrarSolicitud(
@@ -107,32 +126,45 @@ public class SolicitudUseCase implements ISolicitudUseCase {
                                             .destino("SQS")
                                             .build();
 
-                                    return notificacionRepository.enviar(notification, "solicitudes_queue")
+                                    return notificacionRepository.enviar(notification, "solicitudes-queue")
                                             .thenReturn(solicitudActualizada);
                                 })
                 );
     }
 
     @Override
-    public Flux<Prestamos> prestamosActivos() {
+    public Mono<Void> prestamosActivos(Solicitud solicitudNueva) {
         return solicitudRepository.prestamosActivos()
-                .flatMap(prestamos ->
-                        usuarioRepository.getUsuarioByEmail(prestamos.getEmail())
+                .flatMap(prestamo ->
+                        usuarioRepository.getUsuarioByEmail(prestamo.getEmail())
                                 .switchIfEmpty(Mono.error(new ClientNotFoundException("Cliente no encontrado")))
-                                .flatMap(usuario -> {
-                                    prestamos.setSalarioBase(usuario.getSalarioBase());
-
-                                    Notificacion notification = Notificacion.builder()
-                                            .type("PRESTAMOS_ACTIVOS")
-                                            .payload(prestamos.toJson())
-                                            .destino("SQS")
-                                            .build();
-
-                                    return notificacionRepository.enviar(notification, "capacidad-endeudamiento")
-                                            .thenReturn(prestamos);
+                                .map(usuario -> {
+                                    prestamo.setSalarioBase(usuario.getSalarioBase());
+                                    return prestamo;
                                 })
-                );
-    }
+                )
+                .collectList()
+                .flatMap(prestamos -> {
+                    String payload = prestamos.stream()
+                            .map(Prestamos::toJson)
+                            .collect(java.util.stream.Collectors.joining(",", "[", "]"));
 
+                    Notificacion notification = Notificacion.builder()
+                            .type("PRESTAMOS_ACTIVOS")
+                            .payload(payload)
+                            .destino("SQS")
+                            .build();
+
+                    return notificacionRepository.enviar(notification, "capacidad-endeudamiento")
+                            .doOnNext(n -> {
+                                System.out.println("Array de prestamos enviado a cola: total=" + prestamos.size());
+                            })
+                            .then();
+                })
+                .onErrorResume(e -> {
+                    System.out.println("Error en prestamosActivos: " + e.getMessage());
+                    return Mono.empty();
+                });
+    }
 
 }

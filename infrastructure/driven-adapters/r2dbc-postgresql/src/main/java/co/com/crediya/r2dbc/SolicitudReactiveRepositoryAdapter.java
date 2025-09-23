@@ -147,7 +147,7 @@ public class SolicitudReactiveRepositoryAdapter extends ReactiveAdapterOperation
             t.tasa_interes
         FROM solicitudes s
         JOIN tipo_prestamos t ON s.id_tipo_prestamo = t.id
-        WHERE s.id_estado = 4
+        WHERE s.id_estado = 3
     """;
 
         return databaseClient.sql(sql)

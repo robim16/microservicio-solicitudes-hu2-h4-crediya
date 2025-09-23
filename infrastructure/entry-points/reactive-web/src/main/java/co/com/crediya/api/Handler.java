@@ -76,7 +76,8 @@ public class Handler {
                             .contentType(MediaType.APPLICATION_JSON)
                             .bodyValue(solicitudResponseDTO);
 
-                });
+                })
+                .contextWrite(Context.of("token", token));
     }
 
     @Operation(
