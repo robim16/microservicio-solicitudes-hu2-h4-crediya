@@ -21,12 +21,12 @@ routes:
     estadoSolicitud: "/api/v1/solicitudes/{id:\\d+}"
 adapters:
   r2dbc:
-    host: dbsolicitud
+    host: "dbsolicitud"
     port: 5432
-    database: solicitudesdb
-    schema: public
-    username: ${POSTGRES_USER:postgres}
-    password: ${POSTGRES_PASSWORD:Shekina1}
+    database: "solicitudesdb"
+    schema: "public"
+    username: "${POSTGRES_USER:postgres}"
+    password: "${POSTGRES_PASSWORD:Shekina1}"
   restconsumer:
     url: "http://usuarios-service:8081/api/v1/usuarios"
     timeout: 5000
@@ -54,8 +54,8 @@ adapter:
     url: "http://localhost:8080"
   sqs:
     region: "us-east-1"
-    queueUrl: "https://sqs.us-east-1.amazonaws.com/${AWS_ACCOUNT_ID}/solicitudes-queue"
-    #endpoint: "http://localhost:4566"
+    queueUrl: "https://sqs.us-east-1.amazonaws.com/276824024432/solicitudes-queue"
+    queueUrl2: "https://sqs.us-east-1.amazonaws.com/276824024432/capacidad-endeudamiento"
 aws:
   access-key-id: "${AWS_ACCESS_KEY_ID:AWS_ACCESS_KEY_ID}"
   secret-access-key: "${AWS_SECRET_ACCESS_KEY:AWS_SECRET_ACCESS_KEY}"
@@ -81,3 +81,12 @@ resilience4j:
         slidingWindowSize: 10
         minimumNumberOfCalls: 10
         waitDurationInOpenState: "10s"
+entrypoint:
+  sqs:
+    region: "us-east-1"
+    #endpoint: "http://localhost:4566"
+    queueUrl: "https://sqs.us-east-1.amazonaws.com/276824024432/resultado-lambda-endeudamiento"
+    waitTimeSeconds: 20
+    maxNumberOfMessages: 10
+    visibilityTimeoutSeconds: 10
+    numberOfThreads: 1

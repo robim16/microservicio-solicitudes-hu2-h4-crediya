@@ -1,5 +1,6 @@
 package co.com.crediya.usecase.solicitud;
 
+import co.com.crediya.model.prestamos.Prestamos;
 import co.com.crediya.model.solicitud.Solicitud;
 import co.com.crediya.model.solicitud.vo.SolicitudConDetalles;
 import reactor.core.publisher.Flux;

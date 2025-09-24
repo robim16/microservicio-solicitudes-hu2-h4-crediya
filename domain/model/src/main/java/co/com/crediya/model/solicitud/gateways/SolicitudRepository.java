@@ -1,5 +1,6 @@
 package co.com.crediya.model.solicitud.gateways;
 
+import co.com.crediya.model.prestamos.Prestamos;
 import co.com.crediya.model.solicitud.Solicitud;
 import co.com.crediya.model.solicitud.vo.SolicitudConDetalles;
 import reactor.core.publisher.Flux;
@@ -14,4 +15,5 @@ public interface SolicitudRepository {
     Mono<Long> contarSolicitudes(String estado, String email, String plazo, String tipoPrestamo);
     Mono<Solicitud> findById(BigInteger id);
     Mono<Solicitud> updateStatus(Solicitud solicitud);
+    Flux<Prestamos> prestamosActivos(String email);
 }

@@ -13,14 +13,12 @@ import java.math.BigInteger;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SolicitudConDetalles {
-
     private BigInteger id;
     private Long monto;
     private String plazo;
     private String email;
     private BigInteger idEstado;
     private BigInteger idTipoPrestamo;
-
     private BigDecimal tasaInteres;
     private BigDecimal cuotaMensual;
 

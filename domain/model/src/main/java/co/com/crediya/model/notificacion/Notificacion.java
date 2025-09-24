@@ -13,6 +13,6 @@ import lombok.Setter;
 public class Notificacion {
     private String id;
     private String type;
-    private String payload;
+    private Object payload;
     private String destino;
 }
