@@ -135,22 +135,27 @@ public class SolicitudReactiveRepositoryAdapter extends ReactiveAdapterOperation
     }
 
     @Override
-    public Flux<Prestamos> prestamosActivos() {
-        String sql = """
-        SELECT 
-            s.id,
-            s.monto,
-            s.plazo,
-            s.email,
-            s.id_estado,
-            s.id_tipo_prestamo,
-            t.tasa_interes
-        FROM solicitudes s
-        JOIN tipo_prestamos t ON s.id_tipo_prestamo = t.id
-        WHERE s.id_estado = 3
-    """;
+    public Flux<Prestamos> prestamosActivos(String email) {
+        StringBuilder sql = new StringBuilder("""
+            SELECT 
+                s.id,
+                s.monto,
+                s.plazo,
+                s.email,
+                s.id_estado,
+                s.id_tipo_prestamo,
+                t.tasa_interes
+            FROM solicitudes s
+            JOIN tipo_prestamos t ON s.id_tipo_prestamo = t.id
+            WHERE s.id_estado = 3 AND s.email = :email
+        """);
 
-        return databaseClient.sql(sql)
+        DatabaseClient.GenericExecuteSpec query = databaseClient.sql(sql.toString());
+
+
+        query = query.bind("email",email);
+
+        return query
                 .map((row, metadata) -> {
                     Prestamos p = new Prestamos();
                     p.setId(row.get("id", BigInteger.class));

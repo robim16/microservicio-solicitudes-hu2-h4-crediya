@@ -15,5 +15,5 @@ public interface SolicitudRepository {
     Mono<Long> contarSolicitudes(String estado, String email, String plazo, String tipoPrestamo);
     Mono<Solicitud> findById(BigInteger id);
     Mono<Solicitud> updateStatus(Solicitud solicitud);
-    Flux<Prestamos> prestamosActivos();
+    Flux<Prestamos> prestamosActivos(String email);
 }

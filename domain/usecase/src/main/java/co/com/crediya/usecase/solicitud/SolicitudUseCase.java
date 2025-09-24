@@ -15,11 +15,15 @@ import co.com.crediya.usecase.solicitud.exceptions.ErrorFilterException;
 import co.com.crediya.usecase.solicitud.exceptions.InvalidUserException;
 import co.com.crediya.usecase.solicitud.exceptions.TipoPrestamoNotFoundException;
 import co.com.crediya.usecase.solicitud.validators.SolicitudValidator;
+import co.com.crediya.usecase.validacionautomatica.ValidacionAutomaticaUseCase;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.math.BigInteger;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 
 @RequiredArgsConstructor
@@ -30,6 +34,8 @@ public class SolicitudUseCase implements ISolicitudUseCase {
     private final NotificacionRepository notificacionRepository;
     private final EstadosRepository estadosRepository;
     private final TokenService tokenService;
+
+
 
 
     @Override
@@ -53,24 +59,7 @@ public class SolicitudUseCase implements ISolicitudUseCase {
                                                             .switchIfEmpty(Mono.error(new TipoPrestamoNotFoundException("Tipo de préstamo no encontrado")))
                                                             .flatMap(tipoPrestamo ->
                                                                     solicitudRepository.registrarSolicitud(validSolicitud)
-                                                                            .flatMap(solicitudNueva -> {
-                                                                                if (tipoPrestamo.getValidacionAutomatica()) {
-                                                                                    return this.prestamosActivos(solicitudNueva)
-                                                                                            .then(Mono.just(solicitudNueva))
-                                                                                            .doOnNext(s -> {
-                                                                                                System.out.println("Solicitud validada automáticamente: " + s.getId());
-                                                                                            })
-                                                                                            .onErrorResume(ex -> Mono.error(
-                                                                                                    new RuntimeException(
-                                                                                                            "Error en validación automática para solicitud " + solicitudNueva.getId(), ex
-                                                                                                    )
-                                                                                            ));
-                                                                                }
-                                                                                return Mono.just(solicitudNueva)
-                                                                                        .doOnNext(s -> {
-                                                                                            System.out.println("Solicitud registrada sin validación automática: " + s.getId());
-                                                                                        });
-                                                                            })
+                                                                            .doOnNext(s -> System.out.println("Solicitud registrada en DB con id: " + s.getId()))
                                                             )
                                             );
                                 })
@@ -98,7 +87,7 @@ public class SolicitudUseCase implements ISolicitudUseCase {
                             solicitud.getCuotaMensual()
                     );
                 })
-                .onErrorMap(e -> new ErrorFilterException("Error filtrando solicitudes"));
+                .onErrorMap(e -> new ErrorFilterException("Error filtrando solicitudes" +e.getMessage()));
     }
 
 
@@ -121,50 +110,19 @@ public class SolicitudUseCase implements ISolicitudUseCase {
                                 .flatMap(estadoSolicitud -> {
                                     Notificacion notification = Notificacion.builder()
                                             .type("SOLICITUD_ACTUALIZADA")
-                                            .payload("Solicitud " + solicitudActualizada.getId() +
-                                                    " actualizada a estado " + estadoSolicitud.getNombre())
+                                            .payload(
+                                                    "{\"idSolicitud\":" + solicitudActualizada.getId() +
+                                                            ",\"estado\":\"" + estadoSolicitud.getNombre() + "\"}"
+                                            )
                                             .destino("SQS")
                                             .build();
 
                                     return notificacionRepository.enviar(notification, "solicitudes-queue")
                                             .thenReturn(solicitudActualizada);
                                 })
-                );
-    }
-
-    @Override
-    public Mono<Void> prestamosActivos(Solicitud solicitudNueva) {
-        return solicitudRepository.prestamosActivos()
-                .flatMap(prestamo ->
-                        usuarioRepository.getUsuarioByEmail(prestamo.getEmail())
-                                .switchIfEmpty(Mono.error(new ClientNotFoundException("Cliente no encontrado")))
-                                .map(usuario -> {
-                                    prestamo.setSalarioBase(usuario.getSalarioBase());
-                                    return prestamo;
-                                })
-                )
-                .collectList()
-                .flatMap(prestamos -> {
-                    String payload = prestamos.stream()
-                            .map(Prestamos::toJson)
-                            .collect(java.util.stream.Collectors.joining(",", "[", "]"));
-
-                    Notificacion notification = Notificacion.builder()
-                            .type("PRESTAMOS_ACTIVOS")
-                            .payload(payload)
-                            .destino("SQS")
-                            .build();
-
-                    return notificacionRepository.enviar(notification, "capacidad-endeudamiento")
-                            .doOnNext(n -> {
-                                System.out.println("Array de prestamos enviado a cola: total=" + prestamos.size());
-                            })
-                            .then();
-                })
-                .onErrorResume(e -> {
-                    System.out.println("Error en prestamosActivos: " + e.getMessage());
-                    return Mono.empty();
-                });
+                ).
+                onErrorResume(e ->
+                        Mono.error(new RuntimeException("Error al editar la solicitud " + e.getMessage())));
     }
 
 }

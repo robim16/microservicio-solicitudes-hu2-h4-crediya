@@ -6,6 +6,7 @@ import java.math.BigInteger;
 
 @Schema(name = "SolicitudResponseDTO", description = "Respuesta con la información de la solicitud")
 public record SolicitudResponseDTO(
+        @Schema(description = "Id", example = "1") BigInteger id,
         @Schema(description = "Monto del prestamo", example = "14000000") Long monto,
         @Schema(description = "Plazo del prestamo", example = "3 años") String plazo,
         @Schema(description = "Correo electrónico", example = "carlos@email.com") String email,

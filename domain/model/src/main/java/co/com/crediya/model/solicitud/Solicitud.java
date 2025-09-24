@@ -21,4 +21,24 @@ public class Solicitud {
     private String email;
     private BigInteger idEstado;
     private BigInteger idTipoPrestamo;
+
+    public String toJson() {
+        return String.format(
+                "{" +
+                        "\"id\":%s," +
+                        "\"monto\":%d," +
+                        "\"plazo\":\"%s\"," +
+                        "\"email\":\"%s\"," +
+                        "\"idEstado\":%s," +
+                        "\"idTipoPrestamo\":%s" +
+                        "}",
+                id,
+                monto,
+                plazo,
+                email,
+                idEstado,
+                idTipoPrestamo
+        );
+    }
+
 }

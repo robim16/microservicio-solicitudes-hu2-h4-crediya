@@ -5,7 +5,9 @@ import co.com.crediya.api.mapper.SolicitudDTOMapper;
 import co.com.crediya.api.mapper.SolicitudMapper;
 import co.com.crediya.usecase.solicitud.SolicitudUseCase;
 import co.com.crediya.usecase.solicitudlistado.SolicitudListadoUseCase;
+import co.com.crediya.usecase.tipoprestamo.TipoPrestamoUseCase;
 import co.com.crediya.usecase.user.UserUseCase;
+import co.com.crediya.usecase.validacionautomatica.ValidacionAutomaticaUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -34,6 +36,8 @@ public class Handler {
     private final SolicitudDTOMapper solicitudDTOMapper;
     private final SolicitudMapper solicitudMapper;
     private final SolicitudListadoUseCase solicitudListadoUseCase;
+    private final ValidacionAutomaticaUseCase validacionAutomaticaUseCase;
+    private final TipoPrestamoUseCase tipoPrestamoUseCase;
 
 
 
@@ -69,16 +73,32 @@ public class Handler {
                 .replace("Bearer ", "");
 
         return request.bodyToMono(CreateSolicitudDTO.class)
-                .flatMap(dto -> solicitudUseCase.registrarSolicitud(solicitudDTOMapper.mapToEntity(dto),token))
-                .flatMap(savedSolicitud -> {
-                    SolicitudResponseDTO solicitudResponseDTO = solicitudDTOMapper.mapToResponseDTO(savedSolicitud);
-                    return ServerResponse.ok()
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .bodyValue(solicitudResponseDTO);
-
-                })
+                .flatMap(dto -> solicitudUseCase.registrarSolicitud(
+                        solicitudDTOMapper.mapToEntity(dto), token)
+                )
+                .flatMap(savedSolicitud ->
+                        tipoPrestamoUseCase.getTipoPrestamoById(savedSolicitud.getIdTipoPrestamo())
+                                .flatMap(tipoPrestamo -> {
+                                    if (Boolean.TRUE.equals(tipoPrestamo.getValidacionAutomatica())) {
+                                        return validacionAutomaticaUseCase.buscarPrestamosActivos(savedSolicitud)
+                                                .thenReturn(savedSolicitud)
+                                                .doOnNext(s -> System.out.println("Solicitud validada automáticamente: " + s.getId()))
+                                                .onErrorResume(ex -> Mono.error(new RuntimeException(
+                                                        "Error en validación automática para solicitud " + savedSolicitud.getId(), ex
+                                                )));
+                                    }
+                                    return Mono.just(savedSolicitud)
+                                            .doOnNext(s -> System.out.println("Solicitud registrada sin validación automática: " + s.getId()));
+                                })
+                )
+                .map(savedSolicitud -> solicitudDTOMapper.mapToResponseDTO(savedSolicitud))
+                .flatMap(solicitudResponseDTO -> ServerResponse.ok()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(solicitudResponseDTO)
+                )
                 .contextWrite(Context.of("token", token));
     }
+
 
     @Operation(
             summary = "Filtrar solicitudes",

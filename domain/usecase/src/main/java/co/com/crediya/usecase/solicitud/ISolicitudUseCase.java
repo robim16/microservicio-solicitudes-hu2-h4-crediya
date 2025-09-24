@@ -13,5 +13,4 @@ public interface ISolicitudUseCase {
     Flux<SolicitudConDetalles> filtrarSolicitud(String estado, String email, String plazo, String tipoPrestamo, int page, int size);
     Mono<Long> contarSolicitudes(String estado, String email, String plazo, String tipoPrestamo);
     Mono<Solicitud> editarEstado(BigInteger id, BigInteger nuevoEstado);
-    Mono<Void> prestamosActivos(Solicitud solicitud);
 }

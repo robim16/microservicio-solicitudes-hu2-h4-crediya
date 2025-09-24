@@ -29,13 +29,23 @@ public class SQSSender implements NotificacionRepository {
         String url = "solicitudes-queue".equals(queue)
                 ? properties.queueUrl()
                 : properties.queueUrl2();
+
+        String messageBody = String.format(
+                "{" +
+                        "\"type\":\"%s\"," +
+                        "\"payload\":%s," +
+                        "\"destino\":\"%s\"" +
+                        "}",
+                notificacion.getType(),
+                notificacion.getPayload(),
+                notificacion.getDestino()
+        );
+
         return SendMessageRequest.builder()
-                //.queueUrl(properties.queueUrl())
                 .queueUrl(url)
-                .messageBody(notificacion.getPayload())
+                .messageBody(messageBody)
                 .build();
     }
-
 
     @Override
     public Mono<Notificacion> enviar(Notificacion notificacion, String queue) {
@@ -48,13 +58,11 @@ public class SQSSender implements NotificacionRepository {
                             .build();
                 })
                 .doOnError(e -> log.error("Error al enviar mensaje a SQS: {}", e.getMessage(), e))
-                .onErrorResume(e -> {
-                    return Mono.just(
-                            notificacion.toBuilder()
-                                    .id("ERROR:" + e.getClass().getSimpleName())
-                                    .build()
-                    );
-                });
+                .onErrorResume(e -> Mono.just(
+                        notificacion.toBuilder()
+                                .id("ERROR:" + e.getClass().getSimpleName())
+                                .build()
+                ));
     }
 
 }
