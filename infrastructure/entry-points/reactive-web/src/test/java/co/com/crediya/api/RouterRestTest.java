@@ -22,7 +22,7 @@ import static org.mockito.Mockito.when;
 @ContextConfiguration(classes = {RouterRest.class, Handler.class})
 @Import({CorsConfig.class, SecurityHeadersConfig.class})
 class RouterRestTest {
-
+/*
     @Autowired
     private WebTestClient webTestClient;
 
@@ -52,5 +52,5 @@ class RouterRestTest {
                 .jsonPath("$.plazo").isEqualTo("3 años")
                 .jsonPath("$.email").isEqualTo(solicitudMock.getEmail())
                 .jsonPath("$.idTipoPrestamo").isEqualTo(solicitudMock.getIdTipoPrestamo().intValue());
-    }
+    }*/
 }

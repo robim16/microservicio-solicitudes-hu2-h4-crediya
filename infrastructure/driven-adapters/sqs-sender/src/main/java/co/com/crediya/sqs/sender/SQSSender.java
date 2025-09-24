@@ -18,39 +18,51 @@ public class SQSSender implements NotificacionRepository {
     private final SQSSenderProperties properties;
     private final SqsAsyncClient client;
 
-    public Mono<String> send(Notificacion notificacion) {
+    /*public Mono<String> send(Notificacion notificacion) {
         return Mono.fromCallable(() -> buildRequest(notificacion))
                 .flatMap(request -> Mono.fromFuture(client.sendMessage(request)))
                 .doOnNext(response -> log.debug("Message sent {}", response.messageId()))
                 .map(SendMessageResponse::messageId);
-    }
+    }*/
 
-    private SendMessageRequest buildRequest(Notificacion notificacion) {
+    private SendMessageRequest buildRequest(Notificacion notificacion, String queue) {
+        String url = "solicitudes-queue".equals(queue)
+                ? properties.queueUrl()
+                : properties.queueUrl2();
+
+        String messageBody = String.format(
+                "{" +
+                        "\"type\":\"%s\"," +
+                        "\"payload\":%s," +
+                        "\"destino\":\"%s\"" +
+                        "}",
+                notificacion.getType(),
+                notificacion.getPayload(),
+                notificacion.getDestino()
+        );
+
         return SendMessageRequest.builder()
-                .queueUrl(properties.queueUrl())
-                .messageBody(notificacion.getPayload())
+                .queueUrl(url)
+                .messageBody(messageBody)
                 .build();
     }
 
-
     @Override
-    public Mono<Notificacion> enviar(Notificacion notificacion) {
-        return Mono.fromCallable(() -> buildRequest(notificacion))
+    public Mono<Notificacion> enviar(Notificacion notificacion, String queue) {
+        return Mono.fromCallable(() -> buildRequest(notificacion, queue))
                 .flatMap(request -> Mono.fromFuture(client.sendMessage(request)))
                 .map(response -> {
-                    log.info("Mensaje enviado a SQS con ID={}", response.messageId());
+                    log.info("Mensaje enviado a la cola SQS de nombre={} con ID={}", queue, response.messageId());
                     return notificacion.toBuilder()
                             .id(response.messageId())
                             .build();
                 })
                 .doOnError(e -> log.error("Error al enviar mensaje a SQS: {}", e.getMessage(), e))
-                .onErrorResume(e -> {
-                    return Mono.just(
-                            notificacion.toBuilder()
-                                    .id("ERROR:" + e.getClass().getSimpleName())
-                                    .build()
-                    );
-                });
+                .onErrorResume(e -> Mono.just(
+                        notificacion.toBuilder()
+                                .id("ERROR:" + e.getClass().getSimpleName())
+                                .build()
+                ));
     }
 
 }

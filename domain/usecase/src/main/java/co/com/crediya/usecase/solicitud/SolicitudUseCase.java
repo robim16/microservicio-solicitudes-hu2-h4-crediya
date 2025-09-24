@@ -3,6 +3,7 @@ package co.com.crediya.usecase.solicitud;
 import co.com.crediya.model.estados.gateways.EstadosRepository;
 import co.com.crediya.model.notificacion.Notificacion;
 import co.com.crediya.model.notificacion.gateways.NotificacionRepository;
+import co.com.crediya.model.prestamos.Prestamos;
 import co.com.crediya.model.solicitud.Solicitud;
 import co.com.crediya.model.solicitud.gateways.SolicitudRepository;
 import co.com.crediya.model.solicitud.vo.SolicitudConDetalles;
@@ -14,11 +15,15 @@ import co.com.crediya.usecase.solicitud.exceptions.ErrorFilterException;
 import co.com.crediya.usecase.solicitud.exceptions.InvalidUserException;
 import co.com.crediya.usecase.solicitud.exceptions.TipoPrestamoNotFoundException;
 import co.com.crediya.usecase.solicitud.validators.SolicitudValidator;
+import co.com.crediya.usecase.validacionautomatica.ValidacionAutomaticaUseCase;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.math.BigInteger;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 
 @RequiredArgsConstructor
@@ -29,6 +34,9 @@ public class SolicitudUseCase implements ISolicitudUseCase {
     private final NotificacionRepository notificacionRepository;
     private final EstadosRepository estadosRepository;
     private final TokenService tokenService;
+
+
+
 
     @Override
     public Mono<Solicitud> registrarSolicitud(Solicitud solicitud, String token) {
@@ -48,14 +56,16 @@ public class SolicitudUseCase implements ISolicitudUseCase {
                                             .switchIfEmpty(Mono.error(new ClientNotFoundException("Cliente no encontrado")))
                                             .flatMap(usuario ->
                                                     tipoPrestamoRepository.getTipoPrestamoById(validSolicitud.getIdTipoPrestamo())
-                                                            .switchIfEmpty(Mono.error(new TipoPrestamoNotFoundException("Tipo de prestamo no encontrado")))
+                                                            .switchIfEmpty(Mono.error(new TipoPrestamoNotFoundException("Tipo de préstamo no encontrado")))
                                                             .flatMap(tipoPrestamo ->
                                                                     solicitudRepository.registrarSolicitud(validSolicitud)
+                                                                            .doOnNext(s -> System.out.println("Solicitud registrada en DB con id: " + s.getId()))
                                                             )
                                             );
                                 })
                 );
     }
+
 
     @Override
     public Flux<SolicitudConDetalles> filtrarSolicitud(
@@ -77,7 +87,7 @@ public class SolicitudUseCase implements ISolicitudUseCase {
                             solicitud.getCuotaMensual()
                     );
                 })
-                .onErrorMap(e -> new ErrorFilterException("Error filtrando solicitudes"));
+                .onErrorMap(e -> new ErrorFilterException("Error filtrando solicitudes" +e.getMessage()));
     }
 
 
@@ -100,15 +110,19 @@ public class SolicitudUseCase implements ISolicitudUseCase {
                                 .flatMap(estadoSolicitud -> {
                                     Notificacion notification = Notificacion.builder()
                                             .type("SOLICITUD_ACTUALIZADA")
-                                            .payload("Solicitud " + solicitudActualizada.getId() +
-                                                    " actualizada a estado " + estadoSolicitud.getNombre())
+                                            .payload(
+                                                    "{\"idSolicitud\":" + solicitudActualizada.getId() +
+                                                            ",\"estado\":\"" + estadoSolicitud.getNombre() + "\"}"
+                                            )
                                             .destino("SQS")
                                             .build();
 
-                                    return notificacionRepository.enviar(notification)
+                                    return notificacionRepository.enviar(notification, "solicitudes-queue")
                                             .thenReturn(solicitudActualizada);
                                 })
-                );
+                ).
+                onErrorResume(e ->
+                        Mono.error(new RuntimeException("Error al editar la solicitud " + e.getMessage())));
     }
 
 }

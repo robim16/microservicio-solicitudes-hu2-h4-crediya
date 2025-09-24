@@ -1,4 +1,4 @@
-package co.com.crediya.model.solicitud;
+package co.com.crediya.model.prestamos;
 import lombok.Builder;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -7,20 +7,21 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.time.LocalDate;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(toBuilder = true)
-public class Solicitud {
+public class Prestamos {
     private BigInteger id;
     private Long monto;
     private String plazo;
     private String email;
     private BigInteger idEstado;
     private BigInteger idTipoPrestamo;
+    private BigDecimal tasaInteres;
+    private Long salarioBase;
 
     public String toJson() {
         return String.format(
@@ -30,15 +31,18 @@ public class Solicitud {
                         "\"plazo\":\"%s\"," +
                         "\"email\":\"%s\"," +
                         "\"idEstado\":%s," +
-                        "\"idTipoPrestamo\":%s" +
+                        "\"idTipoPrestamo\":%s," +
+                        "\"tasaInteres\":%s," +
+                        "\"salarioBase\":%d" +
                         "}",
                 id,
                 monto,
                 plazo,
                 email,
                 idEstado,
-                idTipoPrestamo
+                idTipoPrestamo,
+                tasaInteres,
+                salarioBase
         );
     }
-
 }
