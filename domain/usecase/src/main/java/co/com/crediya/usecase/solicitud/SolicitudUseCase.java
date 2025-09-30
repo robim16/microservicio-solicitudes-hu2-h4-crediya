@@ -15,6 +15,7 @@ import co.com.crediya.usecase.solicitud.exceptions.ErrorFilterException;
 import co.com.crediya.usecase.solicitud.exceptions.InvalidUserException;
 import co.com.crediya.usecase.solicitud.exceptions.TipoPrestamoNotFoundException;
 import co.com.crediya.usecase.solicitud.validators.SolicitudValidator;
+import co.com.crediya.usecase.solicitudesaprobadas.SolicitudesAprobadasUseCase;
 import co.com.crediya.usecase.validacionautomatica.ValidacionAutomaticaUseCase;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
@@ -34,6 +35,7 @@ public class SolicitudUseCase implements ISolicitudUseCase {
     private final NotificacionRepository notificacionRepository;
     private final EstadosRepository estadosRepository;
     private final TokenService tokenService;
+    private final SolicitudesAprobadasUseCase solicitudesAprobadasUseCase;
 
 
 
@@ -45,13 +47,11 @@ public class SolicitudUseCase implements ISolicitudUseCase {
                         Mono.fromCallable(() -> tokenService.validateToken(token))
                                 .flatMap(authenticatedUser -> {
                                     String email = authenticatedUser.getEmail();
-
                                     if (!email.equals(validSolicitud.getEmail())) {
                                         return Mono.error(new InvalidUserException(
                                                 "No se puede crear una solicitud a otro usuario"));
                                     }
                                     validSolicitud.setEmail(email);
-
                                     return usuarioRepository.getUsuarioByEmail(email)
                                             .switchIfEmpty(Mono.error(new ClientNotFoundException("Cliente no encontrado")))
                                             .flatMap(usuario ->
@@ -120,7 +120,15 @@ public class SolicitudUseCase implements ISolicitudUseCase {
                                     return notificacionRepository.enviar(notification, "solicitudes-queue")
                                             .thenReturn(solicitudActualizada);
                                 })
-                ).
+                )
+                .flatMap(solicitudActualizada -> {
+                    if (solicitudActualizada.getIdEstado() != null
+                            && solicitudActualizada.getIdEstado().intValue() == 3) {
+                        return solicitudesAprobadasUseCase.notificarSolicitudAprobada(solicitudActualizada)
+                                .thenReturn(solicitudActualizada);
+                    }
+                    return Mono.just(solicitudActualizada);
+                }).
                 onErrorResume(e ->
                         Mono.error(new RuntimeException("Error al editar la solicitud " + e.getMessage())));
     }

@@ -3,7 +3,9 @@ package co.com.crediya.api;
 import co.com.crediya.api.dto.*;
 import co.com.crediya.api.mapper.SolicitudDTOMapper;
 import co.com.crediya.api.mapper.SolicitudMapper;
+import co.com.crediya.model.solicitud.Solicitud;
 import co.com.crediya.usecase.solicitud.SolicitudUseCase;
+import co.com.crediya.usecase.solicitudesaprobadas.SolicitudesAprobadasUseCase;
 import co.com.crediya.usecase.solicitudlistado.SolicitudListadoUseCase;
 import co.com.crediya.usecase.tipoprestamo.TipoPrestamoUseCase;
 import co.com.crediya.usecase.user.UserUseCase;
@@ -38,6 +40,7 @@ public class Handler {
     private final SolicitudListadoUseCase solicitudListadoUseCase;
     private final ValidacionAutomaticaUseCase validacionAutomaticaUseCase;
     private final TipoPrestamoUseCase tipoPrestamoUseCase;
+
 
 
 

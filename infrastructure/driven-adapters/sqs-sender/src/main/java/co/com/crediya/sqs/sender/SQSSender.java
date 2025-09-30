@@ -26,9 +26,20 @@ public class SQSSender implements NotificacionRepository {
     }*/
 
     private SendMessageRequest buildRequest(Notificacion notificacion, String queue) {
-        String url = "solicitudes-queue".equals(queue)
-                ? properties.queueUrl()
-                : properties.queueUrl2();
+        String url;
+        switch (queue) {
+            case "solicitudes-queue":
+                url = properties.queueUrl();
+                break;
+            case "capacidad-endeudamiento":
+                url = properties.queueUrl2();
+                break;
+            case "solicitud-aprobada-queue":
+                url = properties.queueUrl3();
+                break;
+            default:
+                throw new IllegalArgumentException("Cola no soportada: " + queue);
+        }
 
         String messageBody = String.format(
                 "{" +
@@ -46,6 +57,7 @@ public class SQSSender implements NotificacionRepository {
                 .messageBody(messageBody)
                 .build();
     }
+
 
     @Override
     public Mono<Notificacion> enviar(Notificacion notificacion, String queue) {
